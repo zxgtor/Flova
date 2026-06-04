@@ -7,7 +7,7 @@ describe("HomeNav", () => {
     render(<HomeNav />);
     expect(screen.getByRole("link", { name: "AI Studio" })).toHaveAttribute("href", "/studio");
     expect(screen.getByRole("link", { name: /generate/i })).toHaveAttribute("href", "/studio");
-    expect(screen.getByRole("link", { name: /account/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /profile/i })).toHaveAttribute(
       "href",
       "/account/profile",
     );

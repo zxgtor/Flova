@@ -5,7 +5,7 @@ import { Avatar } from "@/components/home/Avatar";
 describe("Avatar", () => {
   it("links to the profile page", () => {
     render(<Avatar />);
-    expect(screen.getByRole("link", { name: /account/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /profile/i })).toHaveAttribute(
       "href",
       "/account/profile",
     );

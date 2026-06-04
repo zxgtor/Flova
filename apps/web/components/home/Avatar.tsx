@@ -4,7 +4,7 @@ export function Avatar() {
   return (
     <Link
       href="/account/profile"
-      aria-label="Account"
+      aria-label="Profile"
       className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-2 text-muted transition-colors hover:border-gold hover:text-gold"
     >
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
