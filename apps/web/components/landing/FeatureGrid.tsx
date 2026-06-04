@@ -1,13 +1,21 @@
 import { FeatureCard } from "@/components/landing/FeatureCard";
 
-const FEATURES: { title: string; description: string; icon: string }[] = [
+const FEATURES: { title: string; description: string; image: string }[] = [
   {
     title: "Character Studio",
     description: "Design consistent, reusable AI characters.",
-    icon: "🎭",
+    image: "/mockups/character.png",
   },
-  { title: "Voice Forge", description: "Craft and clone expressive voices.", icon: "🎙️" },
-  { title: "Story Canvas", description: "Plan scenes and storyboards visually.", icon: "📖" },
+  {
+    title: "Voice Forge",
+    description: "Craft and clone expressive voices.",
+    image: "/mockups/voice.png",
+  },
+  {
+    title: "Story Canvas",
+    description: "Plan scenes and storyboards visually.",
+    image: "/mockups/story.png",
+  },
 ];
 
 export function FeatureGrid() {

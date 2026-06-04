@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { SHOWCASE_ITEMS } from "@/lib/showcase";
 
 export function CommunityShowcase() {
@@ -9,9 +10,23 @@ export function CommunityShowcase() {
           <div
             key={item.id}
             data-testid="showcase-tile"
-            className="aspect-video rounded-lg border border-border bg-surface-2 p-3 transition-colors hover:border-gold"
+            className="group relative aspect-video overflow-hidden rounded-lg border border-border bg-surface-2 transition-colors hover:border-gold"
           >
-            <div className="flex h-full flex-col justify-end">
+            <Image
+              src={item.image}
+              alt={item.title}
+              fill
+              sizes="(min-width: 768px) 33vw, 50vw"
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(to top, rgba(14,15,18,0.85) 0%, rgba(14,15,18,0) 50%)",
+              }}
+            />
+            <div className="absolute inset-x-3 bottom-3">
               <p className="font-medium">{item.title}</p>
               <p className="text-xs text-muted">{item.author}</p>
             </div>

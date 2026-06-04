@@ -1,13 +1,23 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export function Hero() {
   return (
     <section className="relative overflow-hidden px-8 py-24 text-center">
+      <Image
+        src="/mockups/hero-bg.png"
+        alt=""
+        aria-hidden
+        fill
+        priority
+        sizes="100vw"
+        className="pointer-events-none object-cover object-center opacity-25"
+      />
       <div
-        className="pointer-events-none absolute inset-0 opacity-40"
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(60% 50% at 70% 40%, rgba(201,162,75,0.25), transparent 70%)",
+            "radial-gradient(60% 50% at 70% 40%, rgba(201,162,75,0.35), transparent 70%), linear-gradient(to bottom, rgba(14,15,18,0.6), rgba(14,15,18,0.9))",
         }}
       />
       <div className="relative mx-auto max-w-3xl">
