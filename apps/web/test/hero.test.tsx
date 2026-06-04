@@ -10,7 +10,7 @@ describe("Hero", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /start forging/i })).toHaveAttribute(
       "href",
-      "/studio",
+      "/home",
     );
   });
 });

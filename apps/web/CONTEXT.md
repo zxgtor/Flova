@@ -10,6 +10,8 @@
 - `components/brand/Logo.tsx` — logo mark + wordmark.
 - `components/landing/*` — landing sections (SiteNav, Hero, FeatureGrid, CommunityShowcase).
 - `lib/showcase.ts` — static placeholder data; replace with community API later.
+- `app/home/page.tsx` — logged-in launcher (search bar + template cards), composes `components/home/*`.
+- `lib/templates.ts` — static placeholder template data; replace with templates API later.
 
 **Conventions:**
 - Brand colors come from CSS variables / Tailwind theme tokens (`bg`, `surface`, `gold`, …). Never hardcode hex.
