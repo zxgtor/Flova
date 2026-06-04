@@ -28,7 +28,7 @@ export function Hero() {
           Create characters, voices, and stories — then generate real video with self-hosted AI.
         </p>
         <Link
-          href="/studio"
+          href="/home"
           className="mt-10 inline-block rounded-lg bg-gold px-8 py-3 font-medium text-bg transition-opacity hover:opacity-90"
         >
           Start Forging
