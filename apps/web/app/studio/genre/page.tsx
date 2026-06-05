@@ -1,16 +1,23 @@
 import { StudioNav } from "@/components/studio/StudioNav";
-import { getStudio } from "@/lib/studios";
+import { GenreGrid } from "@/components/studio/genre/GenreGrid";
+import { ToneSliders } from "@/components/studio/genre/ToneSliders";
 
-export default function Page() {
-  const studio = getStudio("genre")!;
+export default function GenrePage() {
   return (
-    <>
-      <StudioNav title={studio.label} />
-      <main className="mx-auto max-w-3xl p-12 text-center">
-        <h2 className="font-display text-2xl">{studio.label}</h2>
-        <p className="mt-2 text-muted">{studio.blurb}</p>
-        <p className="mt-6 text-sm text-muted">This studio is coming soon.</p>
+    <div className="flex h-screen flex-col">
+      <StudioNav title="AI Genre & Tone Selector" />
+      <main className="mx-auto w-full max-w-3xl flex-1 space-y-8 overflow-y-auto p-8">
+        <GenreGrid />
+        <ToneSliders />
+        <div className="flex justify-center pt-4">
+          <button
+            type="button"
+            className="rounded-md bg-gradient-to-b from-gold-bright via-gold to-gold-deep px-10 py-3 text-sm font-medium text-bg shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]"
+          >
+            Apply to Story
+          </button>
+        </div>
       </main>
-    </>
+    </div>
   );
 }
