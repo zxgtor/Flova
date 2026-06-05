@@ -26,7 +26,7 @@ export const STUDIOS: Studio[] = [
     label: "Environment",
     blurb: "Generate locations and set pieces.",
     icon: "🏞️",
-    available: false,
+    available: true,
   },
   {
     slug: "voice",
