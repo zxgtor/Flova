@@ -1,0 +1,84 @@
+"""SQLAlchemy ORM models — skeleton subset of the foundation data model.
+
+Only the three entities needed for the auth + render tracer-bullet are modelled:
+- users (account & identity)
+- render_jobs (queue state machine)
+- files (storage tier index)
+"""
+
+from __future__ import annotations
+
+import enum
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import Enum, ForeignKey, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from flova_api.db import Base
+
+
+def _uuid() -> str:
+    return str(uuid.uuid4())
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class RenderStatus(str, enum.Enum):
+    queued = "queued"
+    running = "running"
+    done = "done"
+    failed = "failed"
+
+
+class StorageTier(str, enum.Enum):
+    hot = "hot"
+    cold = "cold"
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=_uuid)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    display_name: Mapped[str] = mapped_column(String(80), default="")
+    created_at: Mapped[datetime] = mapped_column(default=_now)
+
+    render_jobs: Mapped[list["RenderJob"]] = relationship(back_populates="user")
+
+
+class RenderJob(Base):
+    __tablename__ = "render_jobs"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    prompt: Mapped[str] = mapped_column(Text)
+    status: Mapped[RenderStatus] = mapped_column(
+        Enum(RenderStatus, native_enum=False), default=RenderStatus.queued, index=True
+    )
+    failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    output_file_id: Mapped[str | None] = mapped_column(
+        ForeignKey("files.id"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(default=_now)
+    updated_at: Mapped[datetime] = mapped_column(default=_now)
+
+    user: Mapped[User] = relationship(back_populates="render_jobs")
+    output_file: Mapped["File | None"] = relationship()
+
+
+class File(Base):
+    __tablename__ = "files"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    storage_key: Mapped[str] = mapped_column(String(500))
+    tier: Mapped[StorageTier] = mapped_column(
+        Enum(StorageTier, native_enum=False), default=StorageTier.hot
+    )
+    byte_size: Mapped[int] = mapped_column(default=0)
+    content_type: Mapped[str] = mapped_column(String(120), default="application/octet-stream")
+    created_at: Mapped[datetime] = mapped_column(default=_now)
