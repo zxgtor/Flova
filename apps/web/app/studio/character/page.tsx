@@ -1,16 +1,17 @@
 import { StudioNav } from "@/components/studio/StudioNav";
-import { getStudio } from "@/lib/studios";
+import { AttributesSidebar } from "@/components/studio/character/AttributesSidebar";
+import { PortraitStage } from "@/components/studio/character/PortraitStage";
+import { VariantsSidebar } from "@/components/studio/character/VariantsSidebar";
 
-export default function Page() {
-  const studio = getStudio("character")!;
+export default function CharacterPage() {
   return (
-    <>
-      <StudioNav title={studio.label} />
-      <main className="mx-auto max-w-3xl p-12 text-center">
-        <h2 className="font-display text-2xl">{studio.label}</h2>
-        <p className="mt-2 text-muted">{studio.blurb}</p>
-        <p className="mt-6 text-sm text-muted">This studio is coming soon.</p>
-      </main>
-    </>
+    <div className="flex h-screen flex-col">
+      <StudioNav title="AI Character Design Studio" />
+      <div className="flex flex-1 overflow-hidden">
+        <AttributesSidebar />
+        <PortraitStage />
+        <VariantsSidebar />
+      </div>
+    </div>
   );
 }

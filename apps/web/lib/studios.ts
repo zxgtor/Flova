@@ -19,7 +19,7 @@ export const STUDIOS: Studio[] = [
     label: "Character Design",
     blurb: "Build consistent, reusable AI characters.",
     icon: "🎭",
-    available: false,
+    available: true,
   },
   {
     slug: "environment",
