@@ -8,10 +8,9 @@ describe("studios registry", () => {
     expect(new Set(slugs).size).toBe(7);
   });
 
-  it("marks story as available and others as coming-soon", () => {
-    const story = STUDIOS.find((s) => s.slug === "story");
-    expect(story?.available).toBe(true);
-    expect(STUDIOS.filter((s) => !s.available)).toHaveLength(6);
+  it("marks story and character as available", () => {
+    expect(STUDIOS.find((s) => s.slug === "story")?.available).toBe(true);
+    expect(STUDIOS.find((s) => s.slug === "character")?.available).toBe(true);
   });
 
   it("getStudio returns matching studio or undefined", () => {

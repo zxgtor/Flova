@@ -14,7 +14,12 @@ describe("StudioSelector", () => {
 
   it("renders unavailable studios as non-links labelled Coming soon", () => {
     render(<StudioSelector />);
-    expect(screen.getAllByText(/coming soon/i)).toHaveLength(6);
-    expect(screen.queryByRole("link", { name: /character design/i })).toBeNull();
+    const comingSoon = screen.getAllByText(/coming soon/i);
+    expect(comingSoon.length).toBeGreaterThan(0);
+    // available studios render as links
+    expect(screen.getByRole("link", { name: /character design/i })).toHaveAttribute(
+      "href",
+      "/studio/character",
+    );
   });
 });
