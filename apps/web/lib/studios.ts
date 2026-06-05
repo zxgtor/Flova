@@ -33,7 +33,7 @@ export const STUDIOS: Studio[] = [
     label: "Voice Forge",
     blurb: "Craft, clone, and tune expressive voices.",
     icon: "🎙️",
-    available: false,
+    available: true,
   },
   {
     slug: "genre",
