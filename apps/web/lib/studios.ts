@@ -47,7 +47,7 @@ export const STUDIOS: Studio[] = [
     label: "Storyboard",
     blurb: "Plan shots visually before generation.",
     icon: "🗂️",
-    available: false,
+    available: true,
   },
   {
     slug: "camera",

@@ -1,16 +1,15 @@
 import { StudioNav } from "@/components/studio/StudioNav";
-import { getStudio } from "@/lib/studios";
+import { StoryboardView } from "@/components/studio/storyboard/StoryboardView";
+import { GlobalAssets } from "@/components/studio/storyboard/GlobalAssets";
 
-export default function Page() {
-  const studio = getStudio("storyboard")!;
+export default function StoryboardPage() {
   return (
-    <>
-      <StudioNav title={studio.label} />
-      <main className="mx-auto max-w-3xl p-12 text-center">
-        <h2 className="font-display text-2xl">{studio.label}</h2>
-        <p className="mt-2 text-muted">{studio.blurb}</p>
-        <p className="mt-6 text-sm text-muted">This studio is coming soon.</p>
+    <div className="flex h-screen flex-col">
+      <StudioNav title="Visual Storyboard Planner" />
+      <main className="flex-1 overflow-y-auto p-6">
+        <StoryboardView />
+        <GlobalAssets />
       </main>
-    </>
+    </div>
   );
 }
