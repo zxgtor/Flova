@@ -12,6 +12,10 @@
 - `lib/showcase.ts` — static placeholder data; replace with community API later.
 - `app/home/page.tsx` — logged-in launcher (search bar + template cards), composes `components/home/*`.
 - `lib/templates.ts` — static placeholder template data; replace with templates API later.
+- `app/studio/page.tsx` — studio launcher (reads `?prompt=` / `?template=`, shows 7 cards from `lib/studios.ts`).
+- `app/studio/<slug>/page.tsx` — per-studio pages. Only `story` is built out; others are placeholders flagged `available: false` in the registry.
+- `lib/studios.ts` — studios registry (slug, label, blurb, icon, available).
+- `lib/story-mock.ts` — Story studio mock data (3 acts / scenes / readiness).
 
 **Conventions:**
 - Brand colors come from CSS variables / Tailwind theme tokens (`bg`, `surface`, `gold`, …). Never hardcode hex.
