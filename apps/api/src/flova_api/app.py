@@ -1,0 +1,48 @@
+"""FastAPI application factory."""
+
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from flova_api import __version__
+from flova_api.db import create_all
+from flova_api.routers import auth, render
+from flova_api.schemas import Health
+from flova_api.settings import get_settings
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    # Skeleton bootstrap. Real envs use Alembic migrations instead.
+    await create_all()
+    yield
+
+
+def create_app() -> FastAPI:
+    s = get_settings()
+    app = FastAPI(
+        title="Flova API",
+        version=__version__,
+        description="Self-hosted AI video platform backend (skeleton).",
+        lifespan=_lifespan,
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[s.web_origin],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    @app.get("/api/health", response_model=Health, tags=["meta"])
+    async def health() -> Health:  # noqa: D401
+        return Health(version=__version__)
+
+    app.include_router(auth.router)
+    app.include_router(render.router)
+    return app
+
+
+app = create_app()

@@ -16,3 +16,14 @@ dist/
 Thumbs.db
 # Test
 coverage/
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+*.db
+storage/
