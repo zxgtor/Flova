@@ -40,7 +40,7 @@ export const STUDIOS: Studio[] = [
     label: "Genre & Tone",
     blurb: "Pick the mood, era, and visual genre.",
     icon: "🎚️",
-    available: false,
+    available: true,
   },
   {
     slug: "storyboard",
