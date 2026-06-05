@@ -1,16 +1,17 @@
 import { StudioNav } from "@/components/studio/StudioNav";
-import { getStudio } from "@/lib/studios";
+import { CAMERA } from "@/lib/camera-mock";
+import { PresetGrid } from "@/components/studio/camera/PresetGrid";
+import { CustomPresets } from "@/components/studio/camera/CustomPresets";
 
-export default function Page() {
-  const studio = getStudio("camera")!;
+export default function CameraPage() {
   return (
-    <>
-      <StudioNav title={studio.label} />
-      <main className="mx-auto max-w-3xl p-12 text-center">
-        <h2 className="font-display text-2xl">{studio.label}</h2>
-        <p className="mt-2 text-muted">{studio.blurb}</p>
-        <p className="mt-6 text-sm text-muted">This studio is coming soon.</p>
+    <div className="flex h-screen flex-col">
+      <StudioNav title="Camera & Lighting Presets" />
+      <main className="mx-auto w-full max-w-4xl flex-1 space-y-8 overflow-y-auto p-8">
+        <PresetGrid presets={CAMERA.cameras} label="Camera" />
+        <PresetGrid presets={CAMERA.lighting} label="Lighting" />
+        <CustomPresets />
       </main>
-    </>
+    </div>
   );
 }
