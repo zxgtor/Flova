@@ -54,7 +54,7 @@ export const STUDIOS: Studio[] = [
     label: "Camera & Light",
     blurb: "Preset cinematography and lighting rigs.",
     icon: "🎥",
-    available: false,
+    available: true,
   },
 ];
 
