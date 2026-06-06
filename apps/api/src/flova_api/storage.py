@@ -13,7 +13,9 @@ from flova_api.settings import get_settings
 
 
 class StorageProvider(Protocol):
-    async def put(self, key: str, data: bytes, content_type: str = "application/octet-stream") -> None: ...
+    async def put(
+        self, key: str, data: bytes, content_type: str = "application/octet-stream"
+    ) -> None: ...
     async def get(self, key: str) -> bytes: ...
     async def url(self, key: str) -> str: ...
     async def delete(self, key: str) -> None: ...
@@ -30,7 +32,9 @@ class LocalFsProvider:
             raise ValueError(f"unsafe storage key: {key!r}")
         return self.root / key
 
-    async def put(self, key: str, data: bytes, content_type: str = "application/octet-stream") -> None:
+    async def put(
+        self, key: str, data: bytes, content_type: str = "application/octet-stream"
+    ) -> None:
         p = self._path(key)
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_bytes(data)

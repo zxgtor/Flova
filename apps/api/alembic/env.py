@@ -9,14 +9,14 @@ from __future__ import annotations
 
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+import flova_api.models  # noqa: F401  — registers tables on Base.metadata
+from alembic import context
 
 # Import models so MetaData is populated. Order matters: settings first, then db, then models.
 from flova_api.db import Base, _sync_url  # noqa: F401
 from flova_api.settings import get_settings
-
-import flova_api.models  # noqa: F401  — registers tables on Base.metadata
 
 config = context.config
 
