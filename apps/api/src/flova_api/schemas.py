@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from flova_api.models import ProjectStatus, RenderStatus
+from flova_api.models import ProjectStatus, RenderStatus, SubscriptionPlan, SubscriptionStatus
 
 
 class Health(BaseModel):
@@ -74,3 +74,16 @@ class ProjectOut(BaseModel):
     status: ProjectStatus
     created_at: datetime
     updated_at: datetime
+
+
+class SubscriptionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    plan: SubscriptionPlan
+    status: SubscriptionStatus
+    current_period_end: datetime | None
+    provider: str  # "stub" | "stripe" — frontend uses this to decide UX
+
+
+class CheckoutOut(BaseModel):
+    url: str

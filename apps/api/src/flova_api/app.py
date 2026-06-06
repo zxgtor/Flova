@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from flova_api import __version__
 from flova_api.db import create_all
-from flova_api.routers import auth, files, projects, render
+from flova_api.routers import auth, billing, files, projects, render
 from flova_api.schemas import Health
 from flova_api.settings import get_settings
 
@@ -46,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(render.router)
     app.include_router(files.router)
     app.include_router(projects.router)
+    app.include_router(billing.router)
     return app
 
 

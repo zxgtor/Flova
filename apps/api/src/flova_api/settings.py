@@ -45,6 +45,15 @@ class Settings(BaseSettings):
     gpu_burst_api_key: str = ""
     gpu_burst_endpoint: str = ""
 
+    # Billing provider. "stub" activates Pro instantly without any external call (dev/
+    # offline). "stripe" creates real Checkout sessions and validates webhooks.
+    billing_provider: Literal["stub", "stripe"] = "stub"
+    stripe_secret_key: str = ""
+    stripe_price_id: str = ""  # The Stripe price (e.g. price_xxx) for the Pro plan.
+    stripe_webhook_secret: str = ""
+    billing_success_url: str = "http://localhost:3000/account/billing?upgraded=1"
+    billing_cancel_url: str = "http://localhost:3000/account/billing?canceled=1"
+
     # Video provider. "stub" writes a placeholder file (default; tests + offline dev).
     # "replicate" hits api.replicate.com — set REPLICATE_API_TOKEN.
     video_provider: Literal["stub", "replicate"] = "stub"

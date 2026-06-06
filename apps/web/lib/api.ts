@@ -15,6 +15,15 @@ export type UserOut = {
   display_name: string;
   created_at: string;
 };
+export type SubscriptionOut = {
+  plan: "free" | "pro";
+  status: "none" | "active" | "past_due" | "canceled";
+  current_period_end: string | null;
+  provider: "stub" | "stripe";
+};
+
+export type CheckoutOut = { url: string };
+
 export type FileOut = {
   id: string;
   storage_key: string;
@@ -163,4 +172,20 @@ export const api = {
 
   deleteProject: (token: string, id: string) =>
     request<void>(`/api/projects/${id}`, { method: "DELETE", token }),
+
+  getSubscription: (token: string) =>
+    request<SubscriptionOut>("/api/billing/subscription", { token }),
+
+  checkout: (token: string) =>
+    request<CheckoutOut>("/api/billing/checkout", { method: "POST", token }),
+
+  portal: (token: string) =>
+    request<CheckoutOut>("/api/billing/portal", { method: "POST", token }),
+
+  stubActivate: (token: string) =>
+    request<SubscriptionOut>("/api/billing/stub-activate", {
+      method: "POST",
+      body: {},
+      token,
+    }),
 };

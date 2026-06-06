@@ -93,6 +93,38 @@ class ProjectStatus(enum.StrEnum):
     archived = "archived"
 
 
+class SubscriptionStatus(enum.StrEnum):
+    none = "none"
+    active = "active"
+    past_due = "past_due"
+    canceled = "canceled"
+
+
+class SubscriptionPlan(enum.StrEnum):
+    free = "free"
+    pro = "pro"
+
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id"), unique=True, index=True
+    )
+    plan: Mapped[SubscriptionPlan] = mapped_column(
+        Enum(SubscriptionPlan, native_enum=False), default=SubscriptionPlan.free
+    )
+    status: Mapped[SubscriptionStatus] = mapped_column(
+        Enum(SubscriptionStatus, native_enum=False), default=SubscriptionStatus.none
+    )
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    current_period_end: Mapped[datetime | None] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(default=_now)
+    updated_at: Mapped[datetime] = mapped_column(default=_now)
+
+
 class Project(Base):
     __tablename__ = "projects"
 
