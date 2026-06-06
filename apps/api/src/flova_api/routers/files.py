@@ -4,7 +4,8 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File as UploadFile_, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import File as UploadFile_
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select

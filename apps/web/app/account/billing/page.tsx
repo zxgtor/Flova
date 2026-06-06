@@ -1,124 +1,155 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { HomeNav } from "@/components/home/HomeNav";
+import { useAuth } from "@/lib/auth";
+import { api, type SubscriptionOut } from "@/lib/api";
 
-const SEATS = [
-  { name: "John Doe", role: "Admin", status: "Active" },
-  { name: "Sarah Smith", role: "Editor", status: "Active" },
-  { name: "Michael Lee", role: "Viewer", status: "Pending" },
-];
+const PLAN_LABEL: Record<string, string> = {
+  free: "Free",
+  pro: "Pro",
+};
 
-const HISTORY = [
-  { date: "Nov 15, 2024", invoice: "INV-1098", amount: "$3,880" },
-  { date: "Oct 15, 2024", invoice: "INV-1077", amount: "$3,880" },
-  { date: "Sep 15, 2024", invoice: "INV-1056", amount: "$3,880" },
-];
+const STATUS_STYLES: Record<string, string> = {
+  none: "bg-surface-2 text-muted",
+  active: "bg-emerald-500/20 text-emerald-400",
+  past_due: "bg-amber-500/20 text-amber-300",
+  canceled: "bg-red-500/20 text-red-300",
+};
 
 export default function BillingPage() {
+  const auth = useAuth();
+  const [sub, setSub] = useState<SubscriptionOut | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async (token: string) => {
+    try {
+      setSub(await api.getSubscription(token));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (auth.loading || !auth.token) return;
+    refresh(auth.token);
+  }, [auth.loading, auth.token, refresh]);
+
+  async function onUpgrade() {
+    if (!auth.token || !sub) return;
+    setBusy(true);
+    setError(null);
+    try {
+      if (sub.provider === "stub") {
+        // Stub provider: flip server-side and refresh inline. No redirect needed.
+        const updated = await api.stubActivate(auth.token);
+        setSub(updated);
+      } else {
+        const { url } = await api.checkout(auth.token);
+        window.location.href = url;
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Upgrade failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onManage() {
+    if (!auth.token) return;
+    setBusy(true);
+    try {
+      const { url } = await api.portal(auth.token);
+      window.location.href = url;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Portal unavailable");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!auth.loading && !auth.token) {
+    return (
+      <>
+        <HomeNav />
+        <main className="p-8 text-center">
+          <Link href="/signin?next=/account/billing" className="text-gold hover:underline">
+            Sign in
+          </Link>{" "}
+          to manage billing.
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <HomeNav />
-      <main className="p-6">
-        <h1 className="mb-6 font-display text-2xl">Team Billing &amp; Seats</h1>
-        <section className="mb-6 rounded-xl border border-border bg-surface p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-xs uppercase tracking-wider text-muted">Plan Overview</h2>
-            <button
-              type="button"
-              className="rounded-md bg-gradient-to-b from-gold-bright via-gold to-gold-deep px-4 py-1.5 text-xs font-medium text-bg shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]"
-            >
-              Upgrade Plan
-            </button>
-          </div>
-          <div className="text-sm text-text">Current Plan: Enterprise Pro</div>
-          <div className="mt-1 text-xs text-muted">
-            Billing Cycle: Monthly · Next Payment: November 15, 2024 · Amount: $3,880
-          </div>
-        </section>
-        <section className="mb-6 rounded-xl border border-border bg-surface p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-xs uppercase tracking-wider text-muted">Seat Management</h2>
-            <button
-              type="button"
-              className="rounded-md border border-gold px-4 py-1.5 text-xs text-gold hover:bg-gold/10"
-            >
-              Invite New Member
-            </button>
-          </div>
-          <table className="w-full text-sm">
-            <thead className="text-xs uppercase tracking-wider text-muted">
-              <tr>
-                <th className="py-2 text-left">Name</th>
-                <th className="py-2 text-left">Role</th>
-                <th className="py-2 text-left">Status</th>
-                <th className="py-2 text-right"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {SEATS.map((s) => (
-                <tr
-                  key={s.name}
-                  data-testid="seat-row"
-                  className="border-t border-border text-text"
-                >
-                  <td className="py-2">{s.name}</td>
-                  <td className="py-2 text-muted">{s.role}</td>
-                  <td className="py-2">
-                    <span
-                      className={
-                        "rounded-full px-2 py-0.5 text-xs " +
-                        (s.status === "Active"
-                          ? "bg-emerald-500/20 text-emerald-400"
-                          : "bg-gold/20 text-gold")
-                      }
-                    >
-                      {s.status}
-                    </span>
-                  </td>
-                  <td className="py-2 text-right">
-                    <button
-                      type="button"
-                      className="text-xs text-muted hover:text-gold"
-                      aria-label={`Manage ${s.name}`}
-                    >
-                      Manage
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-        <section className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-xl border border-border bg-surface p-5">
-            <h2 className="mb-3 text-xs uppercase tracking-wider text-muted">Payment Methods</h2>
-            <div className="flex items-center justify-between rounded-md border border-border bg-surface-2 px-3 py-2 text-sm">
-              <span className="text-text">Visa •••• 1234 (exp 12/26)</span>
-              <button
-                type="button"
-                className="text-xs text-muted hover:text-gold"
-                aria-label="Manage card"
+      <main className="mx-auto max-w-3xl p-6">
+        <h1 className="mb-6 font-display text-2xl">Billing &amp; Subscription</h1>
+
+        {error && (
+          <p role="alert" className="mb-4 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-300">
+            {error}
+          </p>
+        )}
+
+        {sub === null ? (
+          <p className="text-sm text-muted">Loading…</p>
+        ) : (
+          <section
+            data-testid="subscription-card"
+            className="rounded-2xl border border-border bg-surface p-6"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <div className="text-xs uppercase tracking-wider text-muted">Current Plan</div>
+                <div className="mt-1 font-display text-2xl">{PLAN_LABEL[sub.plan]}</div>
+              </div>
+              <span
+                data-testid="subscription-status"
+                className={"rounded-full px-3 py-1 text-xs " + (STATUS_STYLES[sub.status] ?? "")}
               >
-                Manage
-              </button>
+                {sub.status}
+              </span>
             </div>
-          </div>
-          <div className="rounded-xl border border-border bg-surface p-5">
-            <h2 className="mb-3 text-xs uppercase tracking-wider text-muted">Billing History</h2>
-            <ul className="space-y-2 text-sm">
-              {HISTORY.map((h) => (
-                <li
-                  key={h.invoice}
-                  data-testid="invoice-row"
-                  className="flex items-center justify-between"
+
+            {sub.current_period_end && (
+              <p className="text-xs text-muted">
+                Renews on {new Date(sub.current_period_end).toLocaleDateString()}
+              </p>
+            )}
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              {sub.plan === "free" && (
+                <button
+                  type="button"
+                  onClick={onUpgrade}
+                  disabled={busy}
+                  className="rounded-md bg-gradient-to-b from-gold-bright via-gold to-gold-deep px-5 py-2 text-sm font-medium text-bg shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] disabled:opacity-50"
                 >
-                  <span className="text-text">
-                    {h.date} <span className="text-muted">·</span> {h.invoice}
-                  </span>
-                  <span className="text-gold">{h.amount}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
+                  {busy ? "…" : "Upgrade to Pro"}
+                </button>
+              )}
+              {sub.plan === "pro" && sub.provider === "stripe" && (
+                <button
+                  type="button"
+                  onClick={onManage}
+                  disabled={busy}
+                  className="rounded-md border border-gold px-5 py-2 text-sm text-gold hover:bg-gold/10 disabled:opacity-50"
+                >
+                  Manage Subscription
+                </button>
+              )}
+            </div>
+
+            <p className="mt-6 text-[10px] uppercase tracking-wider text-muted">
+              Provider: {sub.provider}
+            </p>
+          </section>
+        )}
       </main>
     </>
   );
