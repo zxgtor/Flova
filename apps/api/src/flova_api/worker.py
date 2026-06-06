@@ -20,7 +20,9 @@ from flova_api.settings import get_settings
 def _build() -> Celery:
     s = get_settings()
     app = Celery("flova", broker=s.redis_url, backend=s.redis_url)
-    app.conf.task_always_eager = s.env == "test"
+    # Eager in tests and dev so the platform runs without a Redis broker. Prod uses a
+    # real broker + separate Celery worker process.
+    app.conf.task_always_eager = s.env in {"test", "dev"}
     app.conf.task_eager_propagates = True
     return app
 
