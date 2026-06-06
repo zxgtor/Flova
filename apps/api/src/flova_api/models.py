@@ -84,3 +84,24 @@ class File(Base):
     byte_size: Mapped[int] = mapped_column(default=0)
     content_type: Mapped[str] = mapped_column(String(120), default="application/octet-stream")
     created_at: Mapped[datetime] = mapped_column(default=_now)
+
+
+class ProjectStatus(enum.StrEnum):
+    draft = "draft"
+    in_progress = "in_progress"
+    completed = "completed"
+    archived = "archived"
+
+
+class Project(Base):
+    __tablename__ = "projects"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[ProjectStatus] = mapped_column(
+        Enum(ProjectStatus, native_enum=False), default=ProjectStatus.draft, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(default=_now)
+    updated_at: Mapped[datetime] = mapped_column(default=_now)
