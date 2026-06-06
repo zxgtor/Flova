@@ -25,5 +25,10 @@ async render pipeline shape is reified and the frontend can target real endpoint
   uvicorn instance.
 - The skeleton lets the team build out individual studios (Group C+) without blocking on
   GPU integration.
-- **Tech debt explicitly accepted:** no migrations, no real model, no R2/PikPak — these
+- **Tech debt explicitly accepted:** no real model, no R2/PikPak — these
   must be added before any environment that holds real user data.
+
+## Update 2026-06-05
+Alembic migrations have since been wired in (see `apps/api/alembic/`). The
+`create_all()` fallback only runs when `env != "prod"`, so dev hacking stays
+zero-config while prod is forced through `alembic upgrade head`.

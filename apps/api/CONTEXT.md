@@ -36,9 +36,13 @@ pytest
 docker compose up -d
 ```
 
+**Migrations:** Alembic is wired up. `alembic/env.py` reads `DATABASE_URL` from
+settings (stripping the async driver suffix). Run `alembic upgrade head` before
+the API in any non-dev environment. Dev/test still get `create_all()` at startup
+for zero-config local hacking; prod is guarded by `env != "prod"`.
+
 **Out of scope (deliberately):**
 - Real video model invocation.
-- Alembic migrations (the skeleton uses `create_all()` at startup; real deployment must add migrations before the schema diverges).
 - R2 and PikPak provider implementations.
 - GPU burst orchestration.
 

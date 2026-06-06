@@ -22,8 +22,15 @@ async def test_submit_and_poll_render(client: AsyncClient) -> None:
 
     poll = await client.get(f"/api/render/{job['id']}", headers=headers)
     assert poll.status_code == 200
-    # Eager mode flips it to done synchronously.
-    assert poll.json()["status"] == "done"
+    body = poll.json()
+    assert body["status"] == "done"
+    # Worker wrote a placeholder output file and linked it on the job.
+    assert body["output_file_id"]
+
+    dl = await client.get(f"/api/files/{body['output_file_id']}", headers=headers)
+    assert dl.status_code == 200
+    assert b"Job: " in dl.content
+    assert b"a cat in space" in dl.content
 
 
 async def test_render_requires_auth(client: AsyncClient) -> None:

@@ -93,4 +93,6 @@ export const api = {
 
   getRender: (token: string, jobId: string, signal?: AbortSignal) =>
     request<RenderJobOut>(`/api/render/${jobId}`, { token, signal }),
+
+  fileUrl: (fileId: string) => `${API_BASE}/api/files/${fileId}`,
 };
