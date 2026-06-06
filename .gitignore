@@ -11,6 +11,8 @@ dist/
 .env
 .env.local
 .env*.local
+# Local override of repo-root .env, used by docker compose
+/.env
 # OS / editor
 .DS_Store
 Thumbs.db
