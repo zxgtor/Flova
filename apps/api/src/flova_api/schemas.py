@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from flova_api.models import RenderStatus
+from flova_api.models import ProjectStatus, RenderStatus
 
 
 class Health(BaseModel):
@@ -50,5 +50,27 @@ class RenderJobOut(BaseModel):
     failure_reason: str | None = None
     output_file_id: str | None = None
     external_job_id: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ProjectCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    description: str = Field(default="", max_length=4000)
+
+
+class ProjectUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=4000)
+    status: ProjectStatus | None = None
+
+
+class ProjectOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    title: str
+    description: str
+    status: ProjectStatus
     created_at: datetime
     updated_at: datetime

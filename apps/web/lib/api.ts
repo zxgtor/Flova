@@ -15,6 +15,16 @@ export type UserOut = {
   display_name: string;
   created_at: string;
 };
+export type ProjectStatus = "draft" | "in_progress" | "completed" | "archived";
+export type ProjectOut = {
+  id: string;
+  title: string;
+  description: string;
+  status: ProjectStatus;
+  created_at: string;
+  updated_at: string;
+};
+
 export type RenderStatus = "queued" | "running" | "done" | "failed";
 export type RenderJobOut = {
   id: string;
@@ -36,7 +46,7 @@ export class ApiError extends Error {
 }
 
 type ReqOpts = {
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
   token?: string | null;
   signal?: AbortSignal;
@@ -95,4 +105,30 @@ export const api = {
     request<RenderJobOut>(`/api/render/${jobId}`, { token, signal }),
 
   fileUrl: (fileId: string) => `${API_BASE}/api/files/${fileId}`,
+
+  listProjects: (token: string) => request<ProjectOut[]>("/api/projects", { token }),
+
+  createProject: (token: string, title: string, description = "") =>
+    request<ProjectOut>("/api/projects", {
+      method: "POST",
+      body: { title, description },
+      token,
+    }),
+
+  getProject: (token: string, id: string) =>
+    request<ProjectOut>(`/api/projects/${id}`, { token }),
+
+  updateProject: (
+    token: string,
+    id: string,
+    patch: { title?: string; description?: string; status?: ProjectStatus },
+  ) =>
+    request<ProjectOut>(`/api/projects/${id}`, {
+      method: "PATCH",
+      body: patch,
+      token,
+    }),
+
+  deleteProject: (token: string, id: string) =>
+    request<void>(`/api/projects/${id}`, { method: "DELETE", token }),
 };
