@@ -1,0 +1,114 @@
+# Full-stack Flova for local development AND production single-host deploys.
+# Production overrides live in docker-compose.prod.yml.
+#
+# Local dev:
+#   docker compose up -d
+#   open http://localhost:3000
+#
+# Production (single VPS):
+#   cp .env.example .env  # fill in secrets
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Migrations run automatically when the api container starts.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-flova}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flova}
+      POSTGRES_DB: ${POSTGRES_DB:-flova}
+    volumes:
+      - pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-flova}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+    environment:
+      ENV: ${ENV:-dev}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-flova}:${POSTGRES_PASSWORD:-flova}@postgres:5432/${POSTGRES_DB:-flova}
+      REDIS_URL: redis://redis:6379/0
+      AUTH_SECRET: ${AUTH_SECRET:-dev-secret-change-me}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
+      API_ORIGIN: ${API_ORIGIN:-http://localhost:8000}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET: ${R2_BUCKET:-}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
+      VIDEO_PROVIDER: ${VIDEO_PROVIDER:-stub}
+      REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN:-}
+      REPLICATE_MODEL: ${REPLICATE_MODEL:-minimax/video-01}
+      BILLING_PROVIDER: ${BILLING_PROVIDER:-stub}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      BILLING_SUCCESS_URL: ${BILLING_SUCCESS_URL:-http://localhost:3000/account/billing?upgraded=1}
+      BILLING_CANCEL_URL: ${BILLING_CANCEL_URL:-http://localhost:3000/account/billing?canceled=1}
+    volumes:
+      - api_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Run migrations then boot the API. Dev uses --reload via the prod override
+    # flipping the command back to plain uvicorn.
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn flova_api.app:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+
+  worker:
+    build:
+      context: ./apps/api
+    environment:
+      ENV: ${ENV:-dev}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-flova}:${POSTGRES_PASSWORD:-flova}@postgres:5432/${POSTGRES_DB:-flova}
+      REDIS_URL: redis://redis:6379/0
+      AUTH_SECRET: ${AUTH_SECRET:-dev-secret-change-me}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET: ${R2_BUCKET:-}
+      VIDEO_PROVIDER: ${VIDEO_PROVIDER:-stub}
+      REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN:-}
+      REPLICATE_MODEL: ${REPLICATE_MODEL:-minimax/video-01}
+    volumes:
+      - api_storage:/app/storage
+    depends_on:
+      api:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    command: ["celery", "-A", "flova_api.worker.celery_app", "worker", "--loglevel=info"]
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  pg:
+  api_storage:
