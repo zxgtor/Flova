@@ -8,6 +8,38 @@ import { api, type RenderJobOut } from "@/lib/api";
 
 const POLL_MS = 1500;
 
+function DownloadButton({ fileId, token }: { fileId: string; token: string }) {
+  const [busy, setBusy] = useState(false);
+  async function onClick() {
+    setBusy(true);
+    try {
+      const res = await fetch(api.fileUrl(fileId), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileId;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      className="mt-5 rounded-md bg-gradient-to-b from-gold-bright via-gold to-gold-deep px-5 py-2 text-sm font-medium text-bg shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] disabled:opacity-50"
+    >
+      {busy ? "Downloading…" : "Download Output"}
+    </button>
+  );
+}
+
 export default function RenderJobPage({
   params,
 }: {
@@ -96,6 +128,10 @@ export default function RenderJobPage({
 
             {job.failure_reason && (
               <p className="mt-3 text-xs text-red-300">{job.failure_reason}</p>
+            )}
+
+            {job.status === "done" && job.output_file_id && auth.token && (
+              <DownloadButton fileId={job.output_file_id} token={auth.token} />
             )}
 
             <div className="mt-6 grid grid-cols-2 gap-3 text-xs">

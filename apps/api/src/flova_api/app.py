@@ -8,15 +8,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from flova_api import __version__
 from flova_api.db import create_all
-from flova_api.routers import auth, render
+from flova_api.routers import auth, files, render
 from flova_api.schemas import Health
 from flova_api.settings import get_settings
 
 
 @asynccontextmanager
 async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    # Skeleton bootstrap. Real envs use Alembic migrations instead.
-    await create_all()
+    # Dev/test convenience: auto-create tables so a fresh checkout just works.
+    # Prod must use `alembic upgrade head` — this code path is skipped there.
+    if get_settings().env != "prod":
+        await create_all()
     yield
 
 
@@ -42,6 +44,7 @@ def create_app() -> FastAPI:
 
     app.include_router(auth.router)
     app.include_router(render.router)
+    app.include_router(files.router)
     return app
 
 
