@@ -26,7 +26,7 @@ export function SiteNav({ cta }: SiteNavProps = {}) {
       </nav>
       {cta ?? (
         <Link
-          href="/account/profile"
+          href="/signin"
           className="rounded-md border border-gold px-4 py-1.5 text-sm text-gold transition-colors hover:bg-gold hover:text-bg"
         >
           Sign in
