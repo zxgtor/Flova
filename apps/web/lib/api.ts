@@ -15,6 +15,15 @@ export type UserOut = {
   display_name: string;
   created_at: string;
 };
+export type FileOut = {
+  id: string;
+  storage_key: string;
+  tier: "hot" | "cold";
+  byte_size: number;
+  content_type: string;
+  created_at: string;
+};
+
 export type ProjectStatus = "draft" | "in_progress" | "completed" | "archived";
 export type ProjectOut = {
   id: string;
@@ -105,6 +114,29 @@ export const api = {
     request<RenderJobOut>(`/api/render/${jobId}`, { token, signal }),
 
   fileUrl: (fileId: string) => `${API_BASE}/api/files/${fileId}`,
+
+  listMyFiles: (token: string) => request<FileOut[]>("/api/files/my", { token }),
+
+  uploadFile: async (token: string, file: File): Promise<FileOut> => {
+    const form = new FormData();
+    form.append("upload", file);
+    const res = await fetch(`${API_BASE}/api/files/upload`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+    if (!res.ok) {
+      let detail = `HTTP ${res.status}`;
+      try {
+        const body = (await res.json()) as { detail?: string };
+        if (typeof body.detail === "string") detail = body.detail;
+      } catch {
+        /* non-JSON */
+      }
+      throw new ApiError(res.status, detail);
+    }
+    return (await res.json()) as FileOut;
+  },
 
   listProjects: (token: string) => request<ProjectOut[]>("/api/projects", { token }),
 

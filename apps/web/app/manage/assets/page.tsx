@@ -1,73 +1,143 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { HomeNav } from "@/components/home/HomeNav";
+import { useAuth } from "@/lib/auth";
+import { api, type FileOut } from "@/lib/api";
 
-const SIDEBAR = ["All Assets", "Characters", "Voices", "Environments", "Soundtrack"];
+function humanSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
-const ASSETS = [
-  { id: 1, title: "Anya — Synth Voice", type: "Character", image: "/mockups/showcase-1.png" },
-  { id: 2, title: "Neon Cityscape — District 7", type: "Environment", image: "/mockups/showcase-2.png" },
-  { id: 3, title: "Narrator — Deep Male", type: "Voice", image: "/mockups/showcase-3.png" },
-  { id: 4, title: "Drone — Delivery Unit", type: "Character", image: "/mockups/showcase-4.png" },
-  { id: 5, title: "Ancient Temple Ruins", type: "Environment", image: "/mockups/showcase-5.png" },
-  { id: 6, title: "Upbeat Electronic Track", type: "Soundtrack", image: "/mockups/showcase-6.png" },
-];
+export default function AssetsPage() {
+  const auth = useAuth();
+  const [files, setFiles] = useState<FileOut[] | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
-export default function AssetsHubPage() {
+  const refresh = useCallback(async (token: string) => {
+    try {
+      setFiles(await api.listMyFiles(token));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (auth.loading || !auth.token) return;
+    refresh(auth.token);
+  }, [auth.loading, auth.token, refresh]);
+
+  async function onPick(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !auth.token) return;
+    setUploading(true);
+    setError(null);
+    try {
+      await api.uploadFile(auth.token, file);
+      await refresh(auth.token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  async function onDownload(f: FileOut) {
+    if (!auth.token) return;
+    const res = await fetch(api.fileUrl(f.id), {
+      headers: { Authorization: `Bearer ${auth.token}` },
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = f.storage_key.split("/").pop() ?? f.id;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  if (!auth.loading && !auth.token) {
+    return (
+      <>
+        <HomeNav />
+        <main className="p-8 text-center">
+          <Link href="/signin?next=/manage/assets" className="text-gold hover:underline">
+            Sign in
+          </Link>{" "}
+          to manage assets.
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <HomeNav />
-      <div className="flex">
-        <aside className="w-56 shrink-0 overflow-y-auto border-r border-border bg-surface p-4">
-          <ul className="space-y-1 text-sm">
-            {SIDEBAR.map((s, i) => (
+      <main className="mx-auto max-w-4xl p-6">
+        <h1 className="mb-6 font-display text-2xl">Assets</h1>
+
+        <section className="mb-8 rounded-2xl border border-border bg-surface p-5">
+          <h2 className="mb-3 text-xs uppercase tracking-wider text-muted">Upload</h2>
+          <label
+            data-testid="upload-drop"
+            className="flex h-32 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-border bg-surface-2 text-xs text-muted hover:border-gold hover:text-gold"
+          >
+            <span>{uploading ? "Uploading…" : "Click to pick a file"}</span>
+            <span className="mt-1 text-[10px]">Up to 50 MB</span>
+            <input
+              ref={inputRef}
+              type="file"
+              className="hidden"
+              onChange={onPick}
+              disabled={uploading}
+            />
+          </label>
+          {error && (
+            <p role="alert" className="mt-3 text-xs text-red-300">
+              {error}
+            </p>
+          )}
+        </section>
+
+        {files === null ? (
+          <p className="text-sm text-muted">Loading…</p>
+        ) : files.length === 0 ? (
+          <p className="text-sm text-muted">No assets uploaded yet.</p>
+        ) : (
+          <ul className="space-y-2" data-testid="asset-list">
+            {files.map((f) => (
               <li
-                key={s}
-                className={
-                  "rounded-md px-3 py-1.5 " +
-                  (i === 0 ? "bg-surface-2 text-gold" : "text-muted hover:text-text")
-                }
+                key={f.id}
+                data-testid="asset-row"
+                className="flex items-center justify-between rounded-xl border border-border bg-surface p-3"
               >
-                {s}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm text-text">
+                    {f.storage_key.split("/").pop() ?? f.id}
+                  </div>
+                  <div className="text-xs text-muted">
+                    {f.content_type} · {humanSize(f.byte_size)}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onDownload(f)}
+                  className="ml-3 rounded-md border border-border px-3 py-1 text-xs text-muted hover:border-gold hover:text-gold"
+                >
+                  Download
+                </button>
               </li>
             ))}
           </ul>
-        </aside>
-        <main className="flex-1 p-6">
-          <div className="mb-6 flex items-center justify-between gap-4">
-            <h1 className="font-display text-2xl">Global Project Assets Hub</h1>
-            <div className="flex flex-1 items-center gap-3">
-              <input
-                type="text"
-                placeholder="Search assets, types, or tags…"
-                className="flex-1 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text placeholder:text-muted focus:border-gold focus:outline-none"
-              />
-              <button
-                type="button"
-                className="rounded-md bg-gradient-to-b from-gold-bright via-gold to-gold-deep px-4 py-2 text-sm font-medium text-bg shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]"
-              >
-                Create New Asset
-              </button>
-            </div>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {ASSETS.map((a) => (
-              <article
-                key={a.id}
-                data-testid="asset-card"
-                className="overflow-hidden rounded-xl border border-border bg-surface"
-              >
-                <div className="relative aspect-video">
-                  <Image src={a.image} alt={a.title} fill sizes="33vw" className="object-cover" />
-                </div>
-                <div className="p-3">
-                  <div className="text-sm text-text">{a.title}</div>
-                  <div className="text-xs text-muted">{a.type}</div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </main>
-      </div>
+        )}
+      </main>
     </>
   );
 }
