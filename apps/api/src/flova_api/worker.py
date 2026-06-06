@@ -1,13 +1,13 @@
-"""Celery setup + the simulated render task.
+"""Celery setup + the render task.
 
-In real deployment: a separate Python service runs `celery -A flova_api.worker worker`
-on a GPU host and pulls jobs. This skeleton task just flips status to `done` after a
-short sleep — no model invocation.
+In real deployment: a separate Python process runs
+`celery -A flova_api.worker.celery_app worker` on a host with the right API token
+or GPU. This file does the orchestration; the actual generation lives in
+`flova_api.video.VideoProvider`.
 """
 
 from __future__ import annotations
 
-import time
 import uuid
 from pathlib import Path
 
@@ -17,6 +17,7 @@ from sqlalchemy import select
 from flova_api.db import SyncSessionLocal
 from flova_api.models import File, RenderJob, RenderStatus, StorageTier
 from flova_api.settings import get_settings
+from flova_api.video import StartResult, get_video_provider
 
 
 def _build() -> Celery:
@@ -39,12 +40,25 @@ def enqueue_render(job_id: str) -> None:
 
 @celery_app.task(name="flova.render")
 def render_task(job_id: str) -> str:
-    """Skeleton: mark running, simulate work, mark done. No model called.
+    """Run a render: provider.start → poll → write video → mark done."""
+    provider = get_video_provider()
 
-    Sync DB session by design: the worker runs in its own process (no FastAPI event loop)
-    and pytest's eager-Celery mode invokes it inside a running loop, so async-DB here
-    would deadlock.
-    """
+    with SyncSessionLocal() as session:
+        job = session.execute(
+            select(RenderJob).where(RenderJob.id == job_id)
+        ).scalar_one_or_none()
+        if job is None:
+            return job_id
+        prompt = job.prompt
+        user_id = job.user_id
+
+    # 1. Start
+    try:
+        start: StartResult = provider.start(prompt)
+    except Exception as e:
+        _mark_failed(job_id, f"provider.start: {e}")
+        return job_id
+
     with SyncSessionLocal() as session:
         job = session.execute(
             select(RenderJob).where(RenderJob.id == job_id)
@@ -52,44 +66,75 @@ def render_task(job_id: str) -> str:
         if job is None:
             return job_id
         job.status = RenderStatus.running
+        job.external_job_id = start.external_id
         session.commit()
 
-    time.sleep(0.05)  # short skeleton "render"
+    # 2. Resolve bytes — stub returns inline; real providers poll.
+    if start.inline_bytes is not None:
+        video_bytes = start.inline_bytes
+        content_type = start.inline_content_type or "application/octet-stream"
+    else:
+        try:
+            result = provider.poll(start.external_id)
+        except Exception as e:
+            _mark_failed(job_id, f"provider.poll: {e}")
+            return job_id
 
-    # "Render" the prompt to a placeholder text file. Real implementation will
-    # produce an mp4 here; the storage + DB plumbing stays identical.
+        if result.status != "done" or result.video_bytes is None:
+            _mark_failed(job_id, result.failure_reason or "provider returned no bytes")
+            return job_id
+        video_bytes = result.video_bytes
+        content_type = result.content_type or "application/octet-stream"
+
+    # 3. Persist output to storage + DB
     settings = get_settings()
     storage_root = Path(settings.storage_local_root)
-    storage_root.mkdir(parents=True, exist_ok=True)
+    suffix = _suffix_for(content_type)
+    key = f"renders/{job_id}/output{suffix}"
+    (storage_root / key).parent.mkdir(parents=True, exist_ok=True)
+    (storage_root / key).write_bytes(video_bytes)
 
+    file_id = str(uuid.uuid4())
     with SyncSessionLocal() as session:
         job = session.execute(
             select(RenderJob).where(RenderJob.id == job_id)
         ).scalar_one_or_none()
         if job is None:
             return job_id
-
-        file_id = str(uuid.uuid4())
-        key = f"renders/{job_id}/output.txt"
-        payload = (
-            f"# Flova render skeleton output\n\n"
-            f"Job: {job_id}\n"
-            f"Prompt: {job.prompt}\n\n"
-            f"(In production this is an mp4. The plumbing is real.)\n"
-        ).encode("utf-8")
-        (storage_root / key).parent.mkdir(parents=True, exist_ok=True)
-        (storage_root / key).write_bytes(payload)
-
         f = File(
             id=file_id,
-            owner_id=job.user_id,
+            owner_id=user_id,
             storage_key=key,
             tier=StorageTier.hot,
-            byte_size=len(payload),
-            content_type="text/plain",
+            byte_size=len(video_bytes),
+            content_type=content_type,
         )
         session.add(f)
         job.output_file_id = file_id
         job.status = RenderStatus.done
         session.commit()
     return job_id
+
+
+def _mark_failed(job_id: str, reason: str) -> None:
+    with SyncSessionLocal() as session:
+        job = session.execute(
+            select(RenderJob).where(RenderJob.id == job_id)
+        ).scalar_one_or_none()
+        if job is None:
+            return
+        job.status = RenderStatus.failed
+        job.failure_reason = reason[:1000]
+        session.commit()
+
+
+def _suffix_for(content_type: str) -> str:
+    if "mp4" in content_type:
+        return ".mp4"
+    if "webm" in content_type:
+        return ".webm"
+    if "gif" in content_type:
+        return ".gif"
+    if "text/plain" in content_type:
+        return ".txt"
+    return ""

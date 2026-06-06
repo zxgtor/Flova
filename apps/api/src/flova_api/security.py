@@ -1,11 +1,11 @@
 """Password hashing + JWT issuing/verification."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-import bcrypt
 from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,7 +38,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def issue_token(user_id: str) -> str:
     s = get_settings()
-    exp = datetime.now(timezone.utc) + timedelta(seconds=s.auth_token_ttl_seconds)
+    exp = datetime.now(UTC) + timedelta(seconds=s.auth_token_ttl_seconds)
     return jwt.encode({"sub": user_id, "exp": exp}, s.auth_secret, algorithm=_ALG)
 
 

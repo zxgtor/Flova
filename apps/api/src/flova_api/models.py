@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import enum
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import Enum, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -23,17 +23,17 @@ def _uuid() -> str:
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
-class RenderStatus(str, enum.Enum):
+class RenderStatus(enum.StrEnum):
     queued = "queued"
     running = "running"
     done = "done"
     failed = "failed"
 
 
-class StorageTier(str, enum.Enum):
+class StorageTier(enum.StrEnum):
     hot = "hot"
     cold = "cold"
 
@@ -47,7 +47,7 @@ class User(Base):
     display_name: Mapped[str] = mapped_column(String(80), default="")
     created_at: Mapped[datetime] = mapped_column(default=_now)
 
-    render_jobs: Mapped[list["RenderJob"]] = relationship(back_populates="user")
+    render_jobs: Mapped[list[RenderJob]] = relationship(back_populates="user")
 
 
 class RenderJob(Base):
@@ -63,11 +63,13 @@ class RenderJob(Base):
     output_file_id: Mapped[str | None] = mapped_column(
         ForeignKey("files.id"), nullable=True
     )
+    # Provider-side id (e.g. Replicate prediction id). Lets us poll/cancel later.
+    external_job_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=_now)
     updated_at: Mapped[datetime] = mapped_column(default=_now)
 
     user: Mapped[User] = relationship(back_populates="render_jobs")
-    output_file: Mapped["File | None"] = relationship()
+    output_file: Mapped[File | None] = relationship()
 
 
 class File(Base):

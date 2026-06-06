@@ -45,6 +45,18 @@ class Settings(BaseSettings):
     gpu_burst_api_key: str = ""
     gpu_burst_endpoint: str = ""
 
+    # Video provider. "stub" writes a placeholder file (default; tests + offline dev).
+    # "replicate" hits api.replicate.com — set REPLICATE_API_TOKEN.
+    video_provider: Literal["stub", "replicate"] = "stub"
+    replicate_api_token: str = ""
+    # Any Replicate text-to-video model slug. Examples:
+    #   minimax/video-01
+    #   wavespeedai/wan-2.1-t2v-720p
+    #   bytedance/seedance-1-pro
+    replicate_model: str = "minimax/video-01"
+    # Seconds to keep polling Replicate before giving up.
+    video_poll_timeout_seconds: int = 600
+
     @property
     def is_sqlite(self) -> bool:
         return self.database_url.startswith("sqlite")

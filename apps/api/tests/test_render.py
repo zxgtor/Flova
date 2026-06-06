@@ -29,7 +29,7 @@ async def test_submit_and_poll_render(client: AsyncClient) -> None:
 
     dl = await client.get(f"/api/files/{body['output_file_id']}", headers=headers)
     assert dl.status_code == 200
-    assert b"Job: " in dl.content
+    # Stub provider echoes the prompt back into the placeholder output.
     assert b"a cat in space" in dl.content
 
 
@@ -40,7 +40,11 @@ async def test_render_requires_auth(client: AsyncClient) -> None:
 
 async def test_cannot_read_other_users_jobs(client: AsyncClient) -> None:
     tok_a = await _auth(client)
-    r = await client.post("/api/render", json={"prompt": "p"}, headers={"Authorization": f"Bearer {tok_a}"})
+    r = await client.post(
+        "/api/render",
+        json={"prompt": "p"},
+        headers={"Authorization": f"Bearer {tok_a}"},
+    )
     job_id = r.json()["id"]
 
     r2 = await client.post(

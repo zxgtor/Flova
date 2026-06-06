@@ -49,5 +49,6 @@ class RenderJobOut(BaseModel):
     status: RenderStatus
     failure_reason: str | None = None
     output_file_id: str | None = None
+    external_job_id: str | None = None
     created_at: datetime
     updated_at: datetime
