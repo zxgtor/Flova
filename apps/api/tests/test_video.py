@@ -7,6 +7,8 @@ from unittest.mock import patch
 import pytest
 
 from flova_api.video import (
+    LocalModelError,
+    LocalModelVideoProvider,
     ReplicateError,
     ReplicateVideoProvider,
     StubVideoProvider,
@@ -90,6 +92,30 @@ def test_replicate_start_and_poll_succeeded(monkeypatch: pytest.MonkeyPatch) -> 
         assert result.status == "done"
         assert result.video_bytes == b"FAKEMP4"
         assert result.content_type == "video/mp4"
+
+
+def test_local_model_requires_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LOCAL_MODEL_ID", "")
+    from flova_api.settings import get_settings
+
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    with pytest.raises(LocalModelError, match="LOCAL_MODEL_ID"):
+        LocalModelVideoProvider()
+
+
+def test_local_model_reports_missing_extra(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When LOCAL_MODEL_ID is set but `torch`/`diffusers` aren't installed."""
+    monkeypatch.setenv("LOCAL_MODEL_ID", "Wan-AI/Wan2.1-T2V-1.3B")
+    from flova_api.settings import get_settings
+
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+
+    # Patch sys.modules so `import torch` raises ImportError.
+    import sys
+
+    monkeypatch.setitem(sys.modules, "torch", None)  # type: ignore[arg-type]
+    with pytest.raises(LocalModelError, match="local-gpu"):
+        LocalModelVideoProvider()
 
 
 def test_replicate_poll_failed(monkeypatch: pytest.MonkeyPatch) -> None:

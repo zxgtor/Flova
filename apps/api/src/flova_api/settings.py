@@ -61,17 +61,27 @@ class Settings(BaseSettings):
     billing_success_url: str = "http://localhost:3000/account/billing?upgraded=1"
     billing_cancel_url: str = "http://localhost:3000/account/billing?canceled=1"
 
-    # Video provider. "stub" writes a placeholder file (default; tests + offline dev).
-    # "replicate" hits api.replicate.com — set REPLICATE_API_TOKEN.
-    video_provider: Literal["stub", "replicate"] = "stub"
+    # Video provider:
+    # - "stub"      writes a placeholder file (default; tests + offline dev)
+    # - "replicate" hits api.replicate.com — set REPLICATE_API_TOKEN
+    # - "local"     runs a diffusers text-to-video model on this host — needs a GPU
+    #               and the [local-gpu] extra installed. See deploy/SELF_HOSTED_MODEL.md.
+    video_provider: Literal["stub", "replicate", "local"] = "stub"
     replicate_api_token: str = ""
-    # Any Replicate text-to-video model slug. Examples:
-    #   minimax/video-01
-    #   wavespeedai/wan-2.1-t2v-720p
-    #   bytedance/seedance-1-pro
     replicate_model: str = "minimax/video-01"
     # Seconds to keep polling Replicate before giving up.
     video_poll_timeout_seconds: int = 600
+
+    # Self-hosted model settings. Any HuggingFace text-to-video diffusers model.
+    # Examples: "Wan-AI/Wan2.1-T2V-1.3B", "cerspense/zeroscope_v2_576w",
+    # "ByteDance/AnimateDiff-Lightning". Heavy: each needs many GB of VRAM.
+    local_model_id: str = ""
+    local_model_dtype: Literal["float16", "bfloat16", "float32"] = "float16"
+    local_model_steps: int = 25
+    local_model_width: int = 512
+    local_model_height: int = 320
+    local_model_num_frames: int = 24
+    local_model_fps: int = 8
 
     @property
     def is_sqlite(self) -> bool:
