@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "next": "^15.1.0",
@@ -16,6 +17,8 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@sentry/browser": "^10.56.0",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.1.0",
     "@types/node": "^22.0.0",

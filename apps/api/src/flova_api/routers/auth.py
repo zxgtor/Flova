@@ -2,12 +2,13 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from flova_api.db import get_session
 from flova_api.models import User
+from flova_api.ratelimit import auth_limit, limiter
 from flova_api.schemas import LoginRequest, RegisterRequest, TokenResponse, UserOut
 from flova_api.security import (
     current_user,
@@ -20,10 +21,13 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
+@limiter.limit(auth_limit)
 async def register(
+    request: Request,
     body: RegisterRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> TokenResponse:
+    _ = request  # required by slowapi key_func
     existing = await session.execute(select(User).where(User.email == body.email))
     if existing.scalar_one_or_none() is not None:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -39,10 +43,13 @@ async def register(
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit(auth_limit)
 async def login(
+    request: Request,
     body: LoginRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> TokenResponse:
+    _ = request
     row = await session.execute(select(User).where(User.email == body.email))
     user = row.scalar_one_or_none()
     if user is None or not verify_password(body.password, user.password_hash):
