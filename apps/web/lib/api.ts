@@ -21,6 +21,17 @@ export type MeStats = {
   failed_renders: number;
 };
 
+export type MonthlyCount = { month: string; count: number };
+
+export type MeUsage = {
+  total_renders: number;
+  successful_renders: number;
+  failed_renders: number;
+  storage_bytes: number;
+  file_count: number;
+  renders_by_month: MonthlyCount[];
+};
+
 export type PresetOut = {
   id: string;
   kind: string;
@@ -225,6 +236,8 @@ export const api = {
     request<void>(`/api/presets/${id}`, { method: "DELETE", token }),
 
   meStats: (token: string) => request<MeStats>("/api/users/me/stats", { token }),
+
+  meUsage: (token: string) => request<MeUsage>("/api/users/me/usage", { token }),
 
   meRecentRenders: (token: string, limit = 12, status?: RenderStatus) => {
     const qs = new URLSearchParams({ limit: String(limit) });
