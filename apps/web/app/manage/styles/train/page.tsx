@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { HomeNav } from "@/components/home/HomeNav";
 
 const MODELS = ["Cinematic v1 (default)", "Realistic v3", "Anime v2", "Surreal Art v1"];
@@ -17,6 +18,17 @@ export default function StyleTrainingPage() {
   return (
     <>
       <HomeNav />
+      <div className="mx-auto mt-4 max-w-6xl px-6">
+        <div
+          role="status"
+          className="rounded-md border border-gold/40 bg-gold/10 px-4 py-2 text-xs text-gold"
+        >
+          <strong className="font-semibold">Coming soon.</strong> This screen is a mockup
+          — real LoRA training is gated on the self-hosted model deployment.
+          Use the <Link href="/manage/styles" className="underline">Style Library</Link>
+          {" "}to author prompt-template styles today.
+        </div>
+      </div>
       <main className="grid gap-6 p-6 lg:grid-cols-3">
         <section className="rounded-xl border border-border bg-surface p-5">
           <h2 className="mb-3 text-xs uppercase tracking-wider text-muted">Upload Training Data</h2>

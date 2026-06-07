@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { HomeNav } from "@/components/home/HomeNav";
 
 const CAMERA = [
@@ -16,6 +17,17 @@ export default function AdvancedSettingsPage() {
   return (
     <>
       <HomeNav />
+      <div className="mx-auto mt-4 max-w-3xl px-6">
+        <div
+          role="status"
+          className="rounded-md border border-gold/40 bg-gold/10 px-4 py-2 text-xs text-gold"
+        >
+          <strong className="font-semibold">Coming soon.</strong> These controls are a
+          visual mockup. Today, style behavior lives in your prompt template;
+          edit one from the{" "}
+          <Link href="/manage/styles" className="underline">Style Library</Link>.
+        </div>
+      </div>
       <main className="mx-auto max-w-3xl p-6">
         <h1 className="mb-6 font-display text-xl">Advanced Controls</h1>
         <div className="grid gap-6 md:grid-cols-2">
