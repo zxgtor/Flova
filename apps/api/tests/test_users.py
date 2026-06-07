@@ -35,6 +35,13 @@ async def test_me_stats_counts_renders(client: AsyncClient) -> None:
     recent = (await client.get("/api/users/me/renders?limit=2", headers=h)).json()
     assert len(recent) == 2
 
+    # Status filter narrows the list.
+    done_only = (await client.get("/api/users/me/renders?status=done", headers=h)).json()
+    assert all(j["status"] == "done" for j in done_only)
+    assert len(done_only) == 3
+    failed_only = (await client.get("/api/users/me/renders?status=failed", headers=h)).json()
+    assert failed_only == []
+
 
 async def test_me_endpoints_require_auth(client: AsyncClient) -> None:
     assert (await client.get("/api/users/me/stats")).status_code == 401

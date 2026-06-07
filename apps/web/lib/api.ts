@@ -226,6 +226,9 @@ export const api = {
 
   meStats: (token: string) => request<MeStats>("/api/users/me/stats", { token }),
 
-  meRecentRenders: (token: string, limit = 12) =>
-    request<RenderJobOut[]>(`/api/users/me/renders?limit=${limit}`, { token }),
+  meRecentRenders: (token: string, limit = 12, status?: RenderStatus) => {
+    const qs = new URLSearchParams({ limit: String(limit) });
+    if (status) qs.set("status", status);
+    return request<RenderJobOut[]>(`/api/users/me/renders?${qs.toString()}`, { token });
+  },
 };
