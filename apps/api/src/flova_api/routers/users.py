@@ -51,11 +51,11 @@ async def me_recent_renders(
     user: Annotated[User, Depends(current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
     limit: int = 12,
+    status: RenderStatus | None = None,
 ) -> list[RenderJob]:
-    rows = await session.execute(
-        select(RenderJob)
-        .where(RenderJob.user_id == user.id)
-        .order_by(RenderJob.created_at.desc())
-        .limit(min(limit, 50))
-    )
+    stmt = select(RenderJob).where(RenderJob.user_id == user.id)
+    if status is not None:
+        stmt = stmt.where(RenderJob.status == status)
+    stmt = stmt.order_by(RenderJob.created_at.desc()).limit(min(limit, 100))
+    rows = await session.execute(stmt)
     return list(rows.scalars().all())
