@@ -15,6 +15,12 @@ export type UserOut = {
   display_name: string;
   created_at: string;
 };
+export type MeStats = {
+  total_renders: number;
+  successful_renders: number;
+  failed_renders: number;
+};
+
 export type PresetOut = {
   id: string;
   kind: string;
@@ -217,4 +223,9 @@ export const api = {
 
   deletePreset: (token: string, id: string) =>
     request<void>(`/api/presets/${id}`, { method: "DELETE", token }),
+
+  meStats: (token: string) => request<MeStats>("/api/users/me/stats", { token }),
+
+  meRecentRenders: (token: string, limit = 12) =>
+    request<RenderJobOut[]>(`/api/users/me/renders?limit=${limit}`, { token }),
 };

@@ -18,6 +18,9 @@ dist/
 Thumbs.db
 # Test
 coverage/
+test-results/
+playwright-report/
+playwright/.cache/
 # Python
 .venv/
 __pycache__/

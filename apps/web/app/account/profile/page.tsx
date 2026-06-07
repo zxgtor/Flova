@@ -1,21 +1,52 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { HomeNav } from "@/components/home/HomeNav";
-
-const TABS = ["My Creations", "Prompt Library", "Private Drafts"];
-
-const WORKS = Array.from({ length: 12 }, (_, i) => ({
-  id: i + 1,
-  image: `/mockups/showcase-${(i % 6) + 1}.png`,
-  isPublic: i % 3 !== 0,
-}));
-
-const STATS = [
-  { label: "Total Generations", value: "1,245" },
-  { label: "Likes Received", value: "85.2k" },
-  { label: "Followers", value: "31k" },
-];
+import { useAuth } from "@/lib/auth";
+import { api, type MeStats, type RenderJobOut } from "@/lib/api";
 
 export default function UserProfilePage() {
+  const auth = useAuth();
+  const [stats, setStats] = useState<MeStats | null>(null);
+  const [recent, setRecent] = useState<RenderJobOut[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async (token: string) => {
+    try {
+      const [s, r] = await Promise.all([
+        api.meStats(token),
+        api.meRecentRenders(token, 12),
+      ]);
+      setStats(s);
+      setRecent(r);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (auth.loading || !auth.token) return;
+    load(auth.token);
+  }, [auth.loading, auth.token, load]);
+
+  if (!auth.loading && !auth.token) {
+    return (
+      <>
+        <HomeNav />
+        <main className="p-8 text-center">
+          <Link href="/signin?next=/account/profile" className="text-gold hover:underline">
+            Sign in
+          </Link>{" "}
+          to view your profile.
+        </main>
+      </>
+    );
+  }
+
+  const handle =
+    auth.user?.display_name?.trim() || auth.user?.email.split("@")[0] || "you";
+
   return (
     <>
       <HomeNav />
@@ -23,52 +54,79 @@ export default function UserProfilePage() {
         <header className="mb-6 flex items-center gap-6 rounded-2xl border border-border bg-surface p-6">
           <div className="h-16 w-16 rounded-full border border-gold/50 bg-gradient-to-b from-surface-2 via-surface to-bg" />
           <div className="flex-1">
-            <h1 className="font-display text-2xl">@AuraCreator</h1>
-            <p className="text-sm text-muted">
-              Visionary AI Artist &amp; Storyteller. Exploring the boundaries of generative video.
-            </p>
+            <h1 className="font-display text-2xl">@{handle}</h1>
+            <p className="text-sm text-muted">{auth.user?.email}</p>
           </div>
           <div className="flex gap-6 text-center">
-            {STATS.map((s) => (
-              <div key={s.label}>
-                <div className="font-display text-xl text-text">{s.value}</div>
-                <div className="text-[10px] uppercase tracking-wider text-muted">{s.label}</div>
-              </div>
-            ))}
+            <Stat label="Total Renders" value={stats?.total_renders ?? "…"} />
+            <Stat label="Successful" value={stats?.successful_renders ?? "…"} />
+            <Stat label="Failed" value={stats?.failed_renders ?? "…"} />
           </div>
         </header>
-        <div className="mb-4 flex gap-6 border-b border-border text-sm">
-          {TABS.map((t, i) => (
-            <span
-              key={t}
-              className={"pb-2 " + (i === 0 ? "border-b-2 border-gold text-gold" : "text-muted")}
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {WORKS.map((w) => (
-            <div
-              key={w.id}
-              data-testid="creation-tile"
-              className="relative overflow-hidden rounded-xl border border-border bg-surface"
-            >
-              <div className="relative aspect-video">
-                <Image src={w.image} alt="" fill sizes="25vw" className="object-cover" />
-                <span
-                  className={
-                    "absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] " +
-                    (w.isPublic ? "bg-gold/20 text-gold" : "bg-bg/70 text-muted")
-                  }
-                >
-                  {w.isPublic ? "Public" : "Private"}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+
+        {error && (
+          <p
+            role="alert"
+            className="mb-4 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-300"
+          >
+            {error}
+          </p>
+        )}
+
+        <h2 className="mb-3 text-xs uppercase tracking-wider text-muted">Recent Renders</h2>
+        {recent === null ? (
+          <p className="text-sm text-muted">Loading…</p>
+        ) : recent.length === 0 ? (
+          <p className="text-sm text-muted">
+            No renders yet.{" "}
+            <Link href="/home" className="text-gold hover:underline">
+              Submit your first prompt
+            </Link>{" "}
+            to get started.
+          </p>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="recent-list">
+            {recent.map((j) => (
+              <li
+                key={j.id}
+                data-testid="recent-row"
+                className="rounded-xl border border-border bg-surface p-4 text-sm"
+              >
+                <div className="line-clamp-2 text-text">{j.prompt}</div>
+                <div className="mt-2 flex items-center justify-between">
+                  <span
+                    className={
+                      "rounded-full px-2 py-0.5 text-xs " +
+                      (j.status === "done"
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : j.status === "failed"
+                          ? "bg-red-500/20 text-red-300"
+                          : "bg-gold/20 text-gold")
+                    }
+                  >
+                    {j.status}
+                  </span>
+                  <Link
+                    href={`/render/${j.id}`}
+                    className="text-xs text-muted hover:text-gold"
+                  >
+                    Open →
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </main>
     </>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div>
+      <div className="font-display text-xl text-text">{value}</div>
+      <div className="text-[10px] uppercase tracking-wider text-muted">{label}</div>
+    </div>
   );
 }

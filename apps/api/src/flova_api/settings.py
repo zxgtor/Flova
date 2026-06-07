@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     gpu_burst_api_key: str = ""
     gpu_burst_endpoint: str = ""
 
+    # Observability
+    sentry_dsn: str = ""
+    sentry_traces_sample_rate: float = 0.0
+    # Rate limit defaults (per IP). Loosened in tests via ENV=test detection.
+    rate_limit_auth: str = "20/minute"
+    rate_limit_render: str = "30/minute"
+
     # Billing provider. "stub" activates Pro instantly without any external call (dev/
     # offline). "stripe" creates real Checkout sessions and validates webhooks.
     billing_provider: Literal["stub", "stripe"] = "stub"
