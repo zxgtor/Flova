@@ -87,3 +87,20 @@ class SubscriptionOut(BaseModel):
 
 class CheckoutOut(BaseModel):
     url: str
+
+
+class PresetCreate(BaseModel):
+    kind: str = Field(min_length=1, max_length=40)
+    name: str = Field(min_length=1, max_length=120)
+    payload: dict = Field(default_factory=dict)
+
+
+class PresetOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    kind: str
+    name: str
+    payload: dict
+    created_at: datetime
+    updated_at: datetime
