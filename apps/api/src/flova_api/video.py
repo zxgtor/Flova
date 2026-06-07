@@ -149,8 +149,118 @@ def _download(url: str) -> tuple[bytes, str]:
 
 # ---------- Factory -------------------------------------------------------------------
 
+# ---------- Self-hosted (diffusers) ---------------------------------------------------
+
+
+class LocalModelError(RuntimeError):
+    pass
+
+
+class LocalModelVideoProvider:
+    """Runs a HuggingFace `diffusers` text-to-video model on this host.
+
+    Why a separate class instead of forking Stub: this code only loads when the
+    operator opts in (`VIDEO_PROVIDER=local`), and it needs a real GPU. We isolate
+    it so test/offline environments without `diffusers`/`torch` installed still
+    boot fine.
+
+    Heavy bits are lazily imported in `__init__` so that:
+    - tests can mock them without `torch` ever being touched
+    - `pip install -e ".[dev]"` doesn't pull in 1.5 GB of CUDA wheels
+    """
+
+    def __init__(self) -> None:
+        s = get_settings()
+        if not s.local_model_id:
+            raise LocalModelError(
+                "LOCAL_MODEL_ID is not set; pick a HuggingFace text-to-video model"
+            )
+        try:
+            import torch  # noqa: F401
+            from diffusers import DiffusionPipeline
+        except ImportError as e:
+            raise LocalModelError(
+                "Self-hosted model needs the `local-gpu` extra: "
+                "`pip install -e \".[local-gpu]\"`"
+            ) from e
+
+        dtype_map = {
+            "float16": "float16",
+            "bfloat16": "bfloat16",
+            "float32": "float32",
+        }
+        self._pipe = DiffusionPipeline.from_pretrained(
+            s.local_model_id,
+            torch_dtype=getattr(__import__("torch"), dtype_map[s.local_model_dtype]),
+        )
+        # Best-effort device move; fall back to CPU (slow but works for tiny models).
+        import torch
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        self._pipe = self._pipe.to(device)
+        self._settings = s
+
+    def start(self, prompt: str) -> StartResult:
+        s = self._settings
+        # Run the pipeline. The exact return shape varies by model — we handle the
+        # common diffusers output: `.frames` is a list[list[PIL.Image]].
+        result = self._pipe(
+            prompt,
+            num_inference_steps=s.local_model_steps,
+            width=s.local_model_width,
+            height=s.local_model_height,
+            num_frames=s.local_model_num_frames,
+        )
+        frames = self._extract_frames(result)
+        video_bytes = self._encode_mp4(frames, fps=s.local_model_fps)
+        return StartResult(
+            external_id=f"local-{id(result)}",
+            inline_bytes=video_bytes,
+            inline_content_type="video/mp4",
+        )
+
+    def poll(self, external_id: str) -> PollResult:  # pragma: no cover — inline path
+        return PollResult(status="done")
+
+    @staticmethod
+    def _extract_frames(result: object) -> list:
+        frames_attr = getattr(result, "frames", None)
+        if frames_attr is None:
+            raise LocalModelError("Pipeline returned no `.frames`; check model compat")
+        # diffusers gives either a list of frames or a list of clips of frames.
+        first = frames_attr[0]
+        if isinstance(first, list):
+            return first
+        return list(frames_attr)
+
+    @staticmethod
+    def _encode_mp4(frames: list, fps: int) -> bytes:
+        # Lazy import: only needed when actually generating.
+        try:
+            import io
+
+            import imageio
+        except ImportError as e:
+            raise LocalModelError(
+                "Self-hosted output needs `imageio[ffmpeg]` in the local-gpu extra"
+            ) from e
+
+        buf = io.BytesIO()
+        # imageio writes to a buffer when given format="ffmpeg" + an explicit ext.
+        with imageio.get_writer(buf, format="ffmpeg", fps=fps, codec="libx264") as writer:
+            for frame in frames:
+                # diffusers PIL Image → numpy via imageio's reader
+                writer.append_data(imageio.core.asarray(frame))
+        return buf.getvalue()
+
+
+# ---------- Factory -------------------------------------------------------------------
+
+
 def get_video_provider() -> VideoProvider:
     s = get_settings()
     if s.video_provider == "replicate":
         return ReplicateVideoProvider()
+    if s.video_provider == "local":
+        return LocalModelVideoProvider()
     return StubVideoProvider()

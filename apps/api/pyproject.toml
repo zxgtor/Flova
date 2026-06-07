@@ -33,6 +33,15 @@ dev = [
   "mypy>=1.13",
   "ruff>=0.7",
 ]
+# Self-hosted text-to-video. ~2 GB to install; requires a CUDA GPU at runtime.
+# See deploy/SELF_HOSTED_MODEL.md.
+local-gpu = [
+  "torch>=2.4",
+  "diffusers>=0.31",
+  "transformers>=4.46",
+  "accelerate>=1.0",
+  "imageio[ffmpeg]>=2.36",
+]
 
 [build-system]
 requires = ["hatchling"]
