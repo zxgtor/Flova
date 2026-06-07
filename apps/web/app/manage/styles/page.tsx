@@ -85,6 +85,16 @@ export default function StyleLibraryPage() {
     await refresh(auth.token);
   }
 
+  async function onTogglePublish(s: PresetOut) {
+    if (!auth.token) return;
+    try {
+      await api.updatePreset(auth.token, s.id, { is_public: !s.is_public });
+      await refresh(auth.token);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed");
+    }
+  }
+
   if (!auth.loading && !auth.token) {
     return (
       <>
@@ -205,7 +215,7 @@ export default function StyleLibraryPage() {
                     >
                       Preview: &ldquo;{preview}&rdquo;
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Link
                         href={`/manage/styles/${s.id}`}
                         className="rounded-md border border-border px-3 py-1 text-xs text-muted hover:border-gold hover:text-gold"
@@ -218,6 +228,19 @@ export default function StyleLibraryPage() {
                       >
                         Apply
                       </Link>
+                      <button
+                        type="button"
+                        onClick={() => onTogglePublish(s)}
+                        data-testid="publish-toggle"
+                        className={
+                          "rounded-md border px-3 py-1 text-xs " +
+                          (s.is_public
+                            ? "border-gold bg-gold/10 text-gold"
+                            : "border-border text-muted hover:border-gold hover:text-gold")
+                        }
+                      >
+                        {s.is_public ? "Public ✓" : "Publish"}
+                      </button>
                       <button
                         type="button"
                         onClick={() => onDelete(s.id)}
