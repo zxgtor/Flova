@@ -20,6 +20,7 @@ from flova_api.routers import (
     projects,
     render,
     teams,
+    training,
     users,
 )
 from flova_api.schemas import Health
@@ -92,6 +93,7 @@ def create_app() -> FastAPI:
     app.include_router(users.router)
     app.include_router(community.router)
     app.include_router(teams.router)
+    app.include_router(training.router)
     return app
 
 
