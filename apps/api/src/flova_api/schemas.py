@@ -10,6 +10,7 @@ from flova_api.models import (
     SubscriptionPlan,
     SubscriptionStatus,
     TeamRole,
+    TrainingStatus,
 )
 
 
@@ -71,6 +72,28 @@ class CommunityRenderOut(BaseModel):
     author: str  # display_name fallback to email-prefix
     created_at: datetime
     output_file_id: str | None = None
+
+
+class TrainingJobCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    base_model: str = Field(min_length=1, max_length=120)
+    file_ids: list[str] = Field(default_factory=list)
+    params: dict = Field(default_factory=dict)
+
+
+class TrainingJobOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+    base_model: str
+    file_ids: list[str]
+    params: dict
+    status: TrainingStatus
+    failure_reason: str | None = None
+    result_preset_id: str | None = None
+    created_at: datetime
+    updated_at: datetime
 
 
 class TeamCreate(BaseModel):

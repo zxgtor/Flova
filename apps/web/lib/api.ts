@@ -62,6 +62,21 @@ export type PresetOut = {
   updated_at: string;
 };
 
+export type TrainingStatus = "queued" | "running" | "done" | "failed";
+
+export type TrainingJobOut = {
+  id: string;
+  name: string;
+  base_model: string;
+  file_ids: string[];
+  params: Record<string, unknown>;
+  status: TrainingStatus;
+  failure_reason: string | null;
+  result_preset_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type MarketplaceStyleOut = {
   id: string;
   name: string;
@@ -353,6 +368,27 @@ export const api = {
       body: {},
       token,
     }),
+
+  listTrainingJobs: (token: string) =>
+    request<TrainingJobOut[]>("/api/training", { token }),
+
+  createTrainingJob: (
+    token: string,
+    body: {
+      name: string;
+      base_model: string;
+      file_ids: string[];
+      params: Record<string, unknown>;
+    },
+  ) =>
+    request<TrainingJobOut>("/api/training", {
+      method: "POST",
+      body,
+      token,
+    }),
+
+  deleteTrainingJob: (token: string, id: string) =>
+    request<void>(`/api/training/${id}`, { method: "DELETE", token }),
 
   meStats: (token: string) => request<MeStats>("/api/users/me/stats", { token }),
 

@@ -95,6 +95,44 @@ class ProjectStatus(enum.StrEnum):
     archived = "archived"
 
 
+class TrainingStatus(enum.StrEnum):
+    queued = "queued"
+    running = "running"
+    done = "done"
+    failed = "failed"
+
+
+class TrainingJob(Base):
+    """LoRA / style training request.
+
+    Submitted from /manage/styles/train. Without the self-hosted GPU worker
+    (ADR-0006) jobs sit at status=queued indefinitely — the table captures
+    user intent and reference data so the worker can pick them up once it's
+    wired in.
+    """
+
+    __tablename__ = "training_jobs"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    base_model: Mapped[str] = mapped_column(String(120))
+    # File ids that the trainer will use as the training set.
+    file_ids: Mapped[list] = mapped_column(JSON, default=list)
+    # Hyperparameters etc. Schema is free-form so the worker can evolve it
+    # without a migration each time.
+    params: Mapped[dict] = mapped_column(JSON, default=dict)
+    status: Mapped[TrainingStatus] = mapped_column(
+        Enum(TrainingStatus, native_enum=False), default=TrainingStatus.queued, index=True
+    )
+    failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # When training succeeds the worker writes the resulting style preset's id
+    # here so the FE can deep-link from the training detail to the new style.
+    result_preset_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(default=_now)
+    updated_at: Mapped[datetime] = mapped_column(default=_now)
+
+
 class TeamRole(enum.StrEnum):
     owner = "owner"
     admin = "admin"
