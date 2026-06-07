@@ -3,8 +3,14 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { StudioNav } from "@/components/studio/StudioNav";
+import { PresetPanel } from "@/components/studio/PresetPanel";
 import { STORYBOARD, type BoardScene } from "@/lib/storyboard-mock";
 import { RenderCTA, useRenderSubmit } from "@/lib/use-render-submit";
+
+type StoryboardPayload = {
+  scenes: BoardScene[];
+  activeId: string;
+};
 
 export default function StoryboardPage() {
   const [scenes, setScenes] = useState<BoardScene[]>(STORYBOARD.scenes);
@@ -92,6 +98,16 @@ export default function StoryboardPage() {
         <div className="mt-8 flex justify-center">
           <RenderCTA state={state} prompt={prompt} label="Render Active Scene" promptPreview />
         </div>
+        <section className="mt-8 rounded-xl border border-border bg-surface p-5">
+          <PresetPanel<StoryboardPayload>
+            kind="storyboard"
+            payload={{ scenes, activeId }}
+            onLoad={(p) => {
+              if (Array.isArray(p.scenes)) setScenes(p.scenes);
+              if (typeof p.activeId === "string") setActiveId(p.activeId);
+            }}
+          />
+        </section>
       </main>
     </div>
   );

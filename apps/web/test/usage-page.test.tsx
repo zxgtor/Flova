@@ -14,11 +14,6 @@ vi.mock("@/lib/auth", () => ({
   }),
 }));
 
-const monthly = Array.from({ length: 12 }, (_, i) => ({
-  month: `2025-${String(i + 1).padStart(2, "0")}`,
-  count: (i + 1) % 4,
-}));
-
 vi.mock("@/lib/api", () => ({
   api: {
     meUsage: vi.fn().mockResolvedValue({
@@ -27,7 +22,10 @@ vi.mock("@/lib/api", () => ({
       failed_renders: 2,
       storage_bytes: 5 * 1024 * 1024,
       file_count: 8,
-      renders_by_month: monthly,
+      renders_by_month: Array.from({ length: 12 }, (_, i) => ({
+        month: `2025-${String(i + 1).padStart(2, "0")}`,
+        count: (i + 1) % 4,
+      })),
     }),
     meRecentRenders: vi.fn().mockResolvedValue([
       {
