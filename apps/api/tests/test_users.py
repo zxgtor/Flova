@@ -47,6 +47,50 @@ async def test_me_endpoints_require_auth(client: AsyncClient) -> None:
     assert (await client.get("/api/users/me/stats")).status_code == 401
     assert (await client.get("/api/users/me/renders")).status_code == 401
     assert (await client.get("/api/users/me/usage")).status_code == 401
+    assert (await client.get("/api/users/me/workflow")).status_code == 401
+
+
+async def test_me_workflow_combines_stages_and_activity(client: AsyncClient) -> None:
+    tok = await _auth(client)
+    h = {"Authorization": f"Bearer {tok}"}
+
+    # Empty workflow.
+    body = (await client.get("/api/users/me/workflow", headers=h)).json()
+    assert {s["id"] for s in body["stages"]} == {
+        "concept",
+        "asset",
+        "storyboard",
+        "editing",
+        "export",
+    }
+    assert all(s["status"] == "todo" for s in body["stages"])
+    assert body["activity"] == []
+
+    # Add a prompt preset, render twice, upload a file.
+    await client.post(
+        "/api/presets",
+        headers=h,
+        json={"kind": "prompt", "name": "P1", "payload": {"text": "hello"}},
+    )
+    for prompt in ("a", "b"):
+        await client.post("/api/render", headers=h, json={"prompt": prompt})
+    await client.post(
+        "/api/files/upload",
+        headers=h,
+        files={"upload": ("hi.txt", b"hi", "text/plain")},
+    )
+
+    body = (await client.get("/api/users/me/workflow", headers=h)).json()
+    by_id = {s["id"]: s for s in body["stages"]}
+    assert by_id["concept"]["count"] == 1
+    assert by_id["concept"]["status"] == "in_progress"
+    # 2 renders + 1 manual upload, plus 2 placeholder render outputs.
+    assert by_id["asset"]["count"] >= 3
+    assert by_id["export"]["count"] == 2
+
+    # Activity covers all three types newest first.
+    types = {a["type"] for a in body["activity"]}
+    assert types == {"render", "file", "preset"}
 
 
 async def test_me_usage_counts_renders_storage_and_monthly(client: AsyncClient) -> None:

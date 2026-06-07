@@ -21,6 +21,26 @@ export type MeStats = {
   failed_renders: number;
 };
 
+export type WorkflowStage = {
+  id: string;
+  label: string;
+  count: number;
+  status: "complete" | "in_progress" | "todo";
+};
+
+export type ActivityItem = {
+  type: "render" | "file" | "preset";
+  label: string;
+  subtype: string | null;
+  created_at: string;
+  link: string | null;
+};
+
+export type MeWorkflow = {
+  stages: WorkflowStage[];
+  activity: ActivityItem[];
+};
+
 export type MonthlyCount = { month: string; count: number };
 
 export type MeUsage = {
@@ -304,6 +324,8 @@ export const api = {
   meStats: (token: string) => request<MeStats>("/api/users/me/stats", { token }),
 
   meUsage: (token: string) => request<MeUsage>("/api/users/me/usage", { token }),
+
+  meWorkflow: (token: string) => request<MeWorkflow>("/api/users/me/workflow", { token }),
 
   meRecentRenders: (token: string, limit = 12, status?: RenderStatus) => {
     const qs = new URLSearchParams({ limit: String(limit) });
