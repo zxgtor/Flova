@@ -2,8 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { StudioNav } from "@/components/studio/StudioNav";
+import { PresetPanel } from "@/components/studio/PresetPanel";
 import { GENRE } from "@/lib/genre-mock";
 import { RenderCTA, useRenderSubmit } from "@/lib/use-render-submit";
+
+type GenrePayload = {
+  genreId: string;
+  tones: Record<string, number>;
+};
 
 export default function GenrePage() {
   const [genreId, setGenreId] = useState(
@@ -86,6 +92,16 @@ export default function GenrePage() {
         <div className="flex justify-center pt-4">
           <RenderCTA state={state} prompt={prompt} label="Apply to Story" promptPreview />
         </div>
+        <section className="mt-8 rounded-xl border border-border bg-surface p-5">
+          <PresetPanel<GenrePayload>
+            kind="genre"
+            payload={{ genreId, tones }}
+            onLoad={(p) => {
+              if (typeof p.genreId === "string") setGenreId(p.genreId);
+              if (p.tones) setTones(p.tones);
+            }}
+          />
+        </section>
       </main>
     </div>
   );

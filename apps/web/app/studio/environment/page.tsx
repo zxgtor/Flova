@@ -3,8 +3,14 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { StudioNav } from "@/components/studio/StudioNav";
+import { PresetPanel } from "@/components/studio/PresetPanel";
 import { ENVIRONMENT } from "@/lib/environment-mock";
 import { RenderCTA, useRenderSubmit } from "@/lib/use-render-submit";
+
+type EnvironmentPayload = {
+  activeItems: Record<string, string>;
+  atmosphere: Record<string, number>;
+};
 
 export default function EnvironmentPage() {
   const [activeItems, setActiveItems] = useState<Record<string, string>>(() => {
@@ -113,7 +119,17 @@ export default function EnvironmentPage() {
         </section>
 
         <aside className="w-72 shrink-0 overflow-y-auto border-l border-border bg-surface p-4">
-          <h2 className="mb-4 px-1 text-xs uppercase tracking-wider text-muted">Atmosphere</h2>
+          <PresetPanel<EnvironmentPayload>
+            kind="environment"
+            payload={{ activeItems, atmosphere }}
+            onLoad={(p) => {
+              if (p.activeItems) setActiveItems(p.activeItems);
+              if (p.atmosphere) setAtmosphere(p.atmosphere);
+            }}
+          />
+          <h2 className="mb-4 mt-6 px-1 text-xs uppercase tracking-wider text-muted">
+            Atmosphere
+          </h2>
           <div className="space-y-4">
             {ENVIRONMENT.atmosphere.map((c) => (
               <div key={c.id}>

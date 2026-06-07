@@ -2,8 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { StudioNav } from "@/components/studio/StudioNav";
+import { PresetPanel } from "@/components/studio/PresetPanel";
 import { VOICE } from "@/lib/voice-mock";
 import { RenderCTA, useRenderSubmit } from "@/lib/use-render-submit";
+
+type VoicePayload = {
+  sliders: Record<string, number>;
+  emotion: string;
+  script: string;
+};
 
 export default function VoicePage() {
   const [sliders, setSliders] = useState(
@@ -90,7 +97,18 @@ export default function VoicePage() {
         </section>
 
         <aside className="w-72 shrink-0 overflow-y-auto border-l border-border bg-surface p-4">
-          <h2 className="mb-3 px-1 text-xs uppercase tracking-wider text-muted">Voice Library</h2>
+          <PresetPanel<VoicePayload>
+            kind="voice"
+            payload={{ sliders, emotion, script }}
+            onLoad={(p) => {
+              if (p.sliders) setSliders(p.sliders);
+              if (typeof p.emotion === "string") setEmotion(p.emotion);
+              if (typeof p.script === "string") setScript(p.script);
+            }}
+          />
+          <h2 className="mb-3 mt-6 px-1 text-xs uppercase tracking-wider text-muted">
+            Voice Library
+          </h2>
           <ul className="space-y-2">
             {VOICE.library.map((v) => (
               <li
