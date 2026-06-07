@@ -50,8 +50,21 @@ class RenderJobOut(BaseModel):
     failure_reason: str | None = None
     output_file_id: str | None = None
     external_job_id: str | None = None
+    is_public: bool = False
     created_at: datetime
     updated_at: datetime
+
+
+class RenderJobUpdate(BaseModel):
+    is_public: bool | None = None
+
+
+class CommunityRenderOut(BaseModel):
+    id: str
+    prompt: str
+    author: str  # display_name fallback to email-prefix
+    created_at: datetime
+    output_file_id: str | None = None
 
 
 class ProjectCreate(BaseModel):

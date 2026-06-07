@@ -65,6 +65,8 @@ class RenderJob(Base):
     )
     # Provider-side id (e.g. Replicate prediction id). Lets us poll/cancel later.
     external_job_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    # Surfaced in /api/community/feed when true. Owner controls via PATCH.
+    is_public: Mapped[bool] = mapped_column(default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(default=_now)
     updated_at: Mapped[datetime] = mapped_column(default=_now)
 
