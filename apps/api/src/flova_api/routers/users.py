@@ -1,7 +1,7 @@
 """User-scoped read endpoints — profile stats + recent renders + usage."""
 
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -91,7 +91,7 @@ async def me_usage(
     )
 
     # Last 12 months of render counts, bucketed in Python to dodge dialect SQL.
-    cutoff = datetime.now(timezone.utc) - timedelta(days=365)
+    cutoff = datetime.now(UTC) - timedelta(days=365)
     rows = await session.execute(
         select(RenderJob.created_at).where(
             RenderJob.user_id == user.id, RenderJob.created_at >= cutoff
@@ -101,11 +101,11 @@ async def me_usage(
     for (ts,) in rows.all():
         # ts may be naive on SQLite; normalize to UTC for the key only.
         if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
+            ts = ts.replace(tzinfo=UTC)
         buckets[f"{ts.year:04d}-{ts.month:02d}"] += 1
 
     # Emit a contiguous 12-month series (oldest → newest) so the chart never has gaps.
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     monthly: list[MonthlyCount] = []
     year, month = now.year, now.month
     for _ in range(12):

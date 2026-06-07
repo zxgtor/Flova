@@ -76,8 +76,18 @@ export type RenderJobOut = {
   status: RenderStatus;
   failure_reason: string | null;
   output_file_id: string | null;
+  external_job_id: string | null;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type CommunityRenderOut = {
+  id: string;
+  prompt: string;
+  author: string;
+  created_at: string;
+  output_file_id: string | null;
 };
 
 export class ApiError extends Error {
@@ -147,6 +157,16 @@ export const api = {
 
   getRender: (token: string, jobId: string, signal?: AbortSignal) =>
     request<RenderJobOut>(`/api/render/${jobId}`, { token, signal }),
+
+  setRenderPublic: (token: string, jobId: string, isPublic: boolean) =>
+    request<RenderJobOut>(`/api/render/${jobId}`, {
+      method: "PATCH",
+      body: { is_public: isPublic },
+      token,
+    }),
+
+  communityFeed: (limit = 24) =>
+    request<CommunityRenderOut[]>(`/api/community/feed?limit=${limit}`),
 
   fileUrl: (fileId: string) => `${API_BASE}/api/files/${fileId}`,
 

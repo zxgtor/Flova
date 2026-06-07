@@ -8,6 +8,59 @@ import { api, type RenderJobOut } from "@/lib/api";
 
 const POLL_MS = 1500;
 
+function PublishToggle({
+  job,
+  token,
+  onChange,
+}: {
+  job: RenderJobOut;
+  token: string;
+  onChange: (next: RenderJobOut) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function toggle() {
+    setBusy(true);
+    setError(null);
+    try {
+      const next = await api.setRenderPublic(token, job.id, !job.is_public);
+      onChange(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={busy}
+        className={
+          "rounded-md px-4 py-2 text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] disabled:opacity-50 " +
+          (job.is_public
+            ? "border border-gold bg-gold/10 text-gold"
+            : "bg-gradient-to-b from-surface-2 to-surface text-text")
+        }
+      >
+        {busy
+          ? "Saving…"
+          : job.is_public
+            ? "Public ✓ — click to unpublish"
+            : "Publish to community"}
+      </button>
+      {error && (
+        <p role="alert" className="text-xs text-red-300">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function DownloadButton({ fileId, token }: { fileId: string; token: string }) {
   const [busy, setBusy] = useState(false);
   async function onClick() {
@@ -131,7 +184,14 @@ export default function RenderJobPage({
             )}
 
             {job.status === "done" && job.output_file_id && auth.token && (
-              <DownloadButton fileId={job.output_file_id} token={auth.token} />
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <DownloadButton fileId={job.output_file_id} token={auth.token} />
+                <PublishToggle
+                  job={job}
+                  token={auth.token}
+                  onChange={(updated) => setJob(updated)}
+                />
+              </div>
             )}
 
             <div className="mt-6 grid grid-cols-2 gap-3 text-xs">
