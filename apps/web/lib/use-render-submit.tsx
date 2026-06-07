@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { ApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import {
+  composePromptWithDefaults,
+  fetchRenderDefaults,
+} from "@/lib/render-defaults";
 
 /**
  * Studio render submission — pulled out so the 7 studio pages don't each
@@ -29,7 +33,16 @@ export function useRenderSubmit(returnPath: string) {
       setBusy(true);
       setError(null);
       try {
-        const job = await api.submitRender(auth.token, prompt);
+        // Auto-apply user's render defaults. Best-effort: if the fetch fails
+        // (e.g., backend down for that endpoint), submit the raw prompt.
+        let final = prompt;
+        try {
+          const { values } = await fetchRenderDefaults(auth.token);
+          final = composePromptWithDefaults(prompt, values);
+        } catch {
+          /* fall back to raw prompt */
+        }
+        const job = await api.submitRender(auth.token, final);
         router.replace(`/render/${job.id}`);
       } catch (e) {
         setError(e instanceof ApiError ? e.detail : "Submission failed");
