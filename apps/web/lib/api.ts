@@ -168,6 +168,9 @@ export const api = {
   communityFeed: (limit = 24) =>
     request<CommunityRenderOut[]>(`/api/community/feed?limit=${limit}`),
 
+  communityFeedItem: (renderId: string) =>
+    request<CommunityRenderOut>(`/api/community/feed/${renderId}`),
+
   fileUrl: (fileId: string) => `${API_BASE}/api/files/${fileId}`,
 
   listMyFiles: (token: string) => request<FileOut[]>("/api/files/my", { token }),

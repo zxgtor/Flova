@@ -54,6 +54,26 @@ async def test_feed_falls_back_to_email_prefix_for_anonymous_author(
     assert feed[0]["author"] == "noname"
 
 
+async def test_feed_item_only_when_public_and_done(client: AsyncClient) -> None:
+    tok = await _register(client, "remix@x.co", "Remi")
+    h = {"Authorization": f"Bearer {tok}"}
+    job = (await client.post("/api/render", json={"prompt": "a remix prompt"}, headers=h)).json()
+
+    # Private → 404
+    assert (await client.get(f"/api/community/feed/{job['id']}")).status_code == 404
+
+    # Publish → 200
+    await client.patch(f"/api/render/{job['id']}", json={"is_public": True}, headers=h)
+    r = await client.get(f"/api/community/feed/{job['id']}")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["prompt"] == "a remix prompt"
+    assert body["author"] == "Remi"
+
+    # Unknown id → 404
+    assert (await client.get("/api/community/feed/no-such-id")).status_code == 404
+
+
 async def test_patch_requires_ownership(client: AsyncClient) -> None:
     tok_a = await _register(client, "a@x.co")
     job = (

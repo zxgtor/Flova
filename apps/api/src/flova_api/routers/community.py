@@ -8,7 +8,7 @@ frontend doesn't have to do its own user lookup.
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -37,14 +37,32 @@ async def feed(
     )
     items: list[CommunityRenderOut] = []
     for job in rows.scalars().all():
-        author = (job.user.display_name or "").strip() or job.user.email.split("@")[0]
-        items.append(
-            CommunityRenderOut(
-                id=job.id,
-                prompt=job.prompt,
-                author=author,
-                created_at=job.created_at,
-                output_file_id=job.output_file_id,
-            )
-        )
+        items.append(_to_out(job))
     return items
+
+
+@router.get("/feed/{render_id}", response_model=CommunityRenderOut)
+async def feed_item(
+    render_id: str,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> CommunityRenderOut:
+    row = await session.execute(
+        select(RenderJob)
+        .options(joinedload(RenderJob.user))
+        .where(RenderJob.id == render_id)
+    )
+    job = row.scalar_one_or_none()
+    if job is None or not job.is_public or job.status != RenderStatus.done:
+        raise HTTPException(status_code=404, detail="Render not in community feed")
+    return _to_out(job)
+
+
+def _to_out(job: RenderJob) -> CommunityRenderOut:
+    author = (job.user.display_name or "").strip() or job.user.email.split("@")[0]
+    return CommunityRenderOut(
+        id=job.id,
+        prompt=job.prompt,
+        author=author,
+        created_at=job.created_at,
+        output_file_id=job.output_file_id,
+    )
