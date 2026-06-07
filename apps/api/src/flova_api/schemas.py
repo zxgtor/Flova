@@ -4,7 +4,13 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from flova_api.models import ProjectStatus, RenderStatus, SubscriptionPlan, SubscriptionStatus
+from flova_api.models import (
+    ProjectStatus,
+    RenderStatus,
+    SubscriptionPlan,
+    SubscriptionStatus,
+    TeamRole,
+)
 
 
 class Health(BaseModel):
@@ -65,6 +71,34 @@ class CommunityRenderOut(BaseModel):
     author: str  # display_name fallback to email-prefix
     created_at: datetime
     output_file_id: str | None = None
+
+
+class TeamCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+
+class TeamOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    owner_id: str
+    name: str
+    created_at: datetime
+    my_role: TeamRole  # caller's role on this team
+
+
+class TeamMemberOut(BaseModel):
+    id: str
+    user_id: str
+    email: str
+    display_name: str
+    role: TeamRole
+    created_at: datetime
+
+
+class TeamMemberAdd(BaseModel):
+    email: EmailStr
+    role: TeamRole = TeamRole.viewer
 
 
 class ProjectCreate(BaseModel):

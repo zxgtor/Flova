@@ -90,6 +90,25 @@ export type CommunityRenderOut = {
   output_file_id: string | null;
 };
 
+export type TeamRole = "owner" | "admin" | "editor" | "viewer";
+
+export type TeamOut = {
+  id: string;
+  owner_id: string;
+  name: string;
+  created_at: string;
+  my_role: TeamRole;
+};
+
+export type TeamMemberOut = {
+  id: string;
+  user_id: string;
+  email: string;
+  display_name: string;
+  role: TeamRole;
+  created_at: string;
+};
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -170,6 +189,30 @@ export const api = {
 
   communityFeedItem: (renderId: string) =>
     request<CommunityRenderOut>(`/api/community/feed/${renderId}`),
+
+  listTeams: (token: string) => request<TeamOut[]>("/api/teams", { token }),
+
+  createTeam: (token: string, name: string) =>
+    request<TeamOut>("/api/teams", { method: "POST", body: { name }, token }),
+
+  getTeam: (token: string, id: string) =>
+    request<TeamOut>(`/api/teams/${id}`, { token }),
+
+  listTeamMembers: (token: string, id: string) =>
+    request<TeamMemberOut[]>(`/api/teams/${id}/members`, { token }),
+
+  addTeamMember: (token: string, id: string, email: string, role: TeamRole) =>
+    request<TeamMemberOut>(`/api/teams/${id}/members`, {
+      method: "POST",
+      body: { email, role },
+      token,
+    }),
+
+  removeTeamMember: (token: string, teamId: string, memberId: string) =>
+    request<void>(`/api/teams/${teamId}/members/${memberId}`, {
+      method: "DELETE",
+      token,
+    }),
 
   fileUrl: (fileId: string) => `${API_BASE}/api/files/${fileId}`,
 

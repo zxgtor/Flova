@@ -11,7 +11,17 @@ from slowapi.middleware import SlowAPIMiddleware
 from flova_api import __version__
 from flova_api.db import create_all
 from flova_api.ratelimit import limiter
-from flova_api.routers import auth, billing, community, files, presets, projects, render, users
+from flova_api.routers import (
+    auth,
+    billing,
+    community,
+    files,
+    presets,
+    projects,
+    render,
+    teams,
+    users,
+)
 from flova_api.schemas import Health
 from flova_api.settings import get_settings
 
@@ -81,6 +91,7 @@ def create_app() -> FastAPI:
     app.include_router(billing.router)
     app.include_router(users.router)
     app.include_router(community.router)
+    app.include_router(teams.router)
     return app
 
 

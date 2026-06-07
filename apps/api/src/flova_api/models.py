@@ -95,6 +95,34 @@ class ProjectStatus(enum.StrEnum):
     archived = "archived"
 
 
+class TeamRole(enum.StrEnum):
+    owner = "owner"
+    admin = "admin"
+    editor = "editor"
+    viewer = "viewer"
+
+
+class Team(Base):
+    __tablename__ = "teams"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    created_at: Mapped[datetime] = mapped_column(default=_now)
+
+
+class TeamMember(Base):
+    __tablename__ = "team_members"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=_uuid)
+    team_id: Mapped[str] = mapped_column(ForeignKey("teams.id"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    role: Mapped[TeamRole] = mapped_column(
+        Enum(TeamRole, native_enum=False), default=TeamRole.viewer
+    )
+    created_at: Mapped[datetime] = mapped_column(default=_now)
+
+
 class SubscriptionStatus(enum.StrEnum):
     none = "none"
     active = "active"
