@@ -149,5 +149,20 @@ class PresetOut(BaseModel):
     kind: str
     name: str
     payload: dict
+    is_public: bool = False
     created_at: datetime
     updated_at: datetime
+
+
+class PresetUpdate(BaseModel):
+    is_public: bool | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    payload: dict | None = None
+
+
+class MarketplaceStyleOut(BaseModel):
+    id: str
+    name: str
+    payload: dict
+    author: str
+    created_at: datetime

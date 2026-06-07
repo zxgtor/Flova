@@ -171,6 +171,8 @@ class StudioPreset(Base):
     kind: Mapped[str] = mapped_column(String(40), index=True)
     name: Mapped[str] = mapped_column(String(120))
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    # Surfaced in /api/community/styles for kind=style. Owner controls via PATCH.
+    is_public: Mapped[bool] = mapped_column(default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(default=_now)
     updated_at: Mapped[datetime] = mapped_column(default=_now)
 

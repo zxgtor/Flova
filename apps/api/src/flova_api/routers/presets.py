@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from flova_api.db import get_session
 from flova_api.models import StudioPreset, User
-from flova_api.schemas import PresetCreate, PresetOut
+from flova_api.schemas import PresetCreate, PresetOut, PresetUpdate
 from flova_api.security import current_user
 
 router = APIRouter(prefix="/api/presets", tags=["presets"])
@@ -62,6 +62,25 @@ async def get_preset(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> StudioPreset:
     return await _load(session, user, preset_id)
+
+
+@router.patch("/{preset_id}", response_model=PresetOut)
+async def update_preset(
+    preset_id: str,
+    body: PresetUpdate,
+    user: Annotated[User, Depends(current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> StudioPreset:
+    p = await _load(session, user, preset_id)
+    if body.is_public is not None:
+        p.is_public = body.is_public
+    if body.name is not None:
+        p.name = body.name
+    if body.payload is not None:
+        p.payload = body.payload
+    await session.commit()
+    await session.refresh(p)
+    return p
 
 
 @router.delete("/{preset_id}", status_code=204)

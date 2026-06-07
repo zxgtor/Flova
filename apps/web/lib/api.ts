@@ -57,8 +57,17 @@ export type PresetOut = {
   kind: string;
   name: string;
   payload: Record<string, unknown>;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type MarketplaceStyleOut = {
+  id: string;
+  name: string;
+  payload: Record<string, unknown>;
+  author: string;
+  created_at: string;
 };
 
 export type SubscriptionOut = {
@@ -320,6 +329,30 @@ export const api = {
 
   deletePreset: (token: string, id: string) =>
     request<void>(`/api/presets/${id}`, { method: "DELETE", token }),
+
+  updatePreset: (
+    token: string,
+    id: string,
+    patch: { is_public?: boolean; name?: string; payload?: Record<string, unknown> },
+  ) =>
+    request<PresetOut>(`/api/presets/${id}`, {
+      method: "PATCH",
+      body: patch,
+      token,
+    }),
+
+  marketplaceStyles: (limit = 30) =>
+    request<MarketplaceStyleOut[]>(`/api/community/styles?limit=${limit}`),
+
+  marketplaceStyle: (id: string) =>
+    request<MarketplaceStyleOut>(`/api/community/styles/${id}`),
+
+  importMarketplaceStyle: (token: string, id: string) =>
+    request<PresetOut>(`/api/community/styles/${id}/import`, {
+      method: "POST",
+      body: {},
+      token,
+    }),
 
   meStats: (token: string) => request<MeStats>("/api/users/me/stats", { token }),
 
