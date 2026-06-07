@@ -15,6 +15,15 @@ export type UserOut = {
   display_name: string;
   created_at: string;
 };
+export type PresetOut = {
+  id: string;
+  kind: string;
+  name: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};
+
 export type SubscriptionOut = {
   plan: "free" | "pro";
   status: "none" | "active" | "past_due" | "canceled";
@@ -188,4 +197,24 @@ export const api = {
       body: {},
       token,
     }),
+
+  listPresets: (token: string, kind?: string) =>
+    request<PresetOut[]>(`/api/presets${kind ? `?kind=${encodeURIComponent(kind)}` : ""}`, {
+      token,
+    }),
+
+  createPreset: (
+    token: string,
+    kind: string,
+    name: string,
+    payload: Record<string, unknown>,
+  ) =>
+    request<PresetOut>("/api/presets", {
+      method: "POST",
+      body: { kind, name, payload },
+      token,
+    }),
+
+  deletePreset: (token: string, id: string) =>
+    request<void>(`/api/presets/${id}`, { method: "DELETE", token }),
 };

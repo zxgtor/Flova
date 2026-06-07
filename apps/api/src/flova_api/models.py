@@ -12,7 +12,7 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Enum, ForeignKey, String, Text
+from sqlalchemy import JSON, Enum, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from flova_api.db import Base
@@ -121,6 +121,26 @@ class Subscription(Base):
     stripe_customer_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
     current_period_end: Mapped[datetime | None] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(default=_now)
+    updated_at: Mapped[datetime] = mapped_column(default=_now)
+
+
+class StudioPreset(Base):
+    """Generic user-saved studio configuration.
+
+    `kind` identifies the studio ("character", "camera", "voice", ...) and
+    `payload` is the studio-specific JSON blob the frontend writes and reads.
+    Keeping it generic avoids a table-per-studio explosion while still letting
+    each studio define its own payload shape.
+    """
+
+    __tablename__ = "studio_presets"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(40), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(default=_now)
     updated_at: Mapped[datetime] = mapped_column(default=_now)
 

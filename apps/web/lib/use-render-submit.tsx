@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useState } from "react";
 import { ApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
